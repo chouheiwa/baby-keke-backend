@@ -1,0 +1,64 @@
+"""
+依赖注入函数
+用于 FastAPI 路由的依赖项
+"""
+from typing import Annotated
+from fastapi import Depends, HTTPException, Header, status
+from sqlalchemy.orm import Session
+from wxcloudrun.core.database import get_db
+from wxcloudrun.crud import user as user_crud, baby as baby_crud
+
+
+def get_current_user_id(
+    x_wx_openid: Annotated[str, Header()] = None,
+    db: Annotated[Session, Depends(get_db)] = None
+) -> int:
+    """
+    从请求头获取当前用户ID
+    微信小程序云托管会自动在请求头中注入 X-Wx-Openid
+    """
+    if not x_wx_openid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="未找到用户身份信息"
+        )
+
+    # 根据 openid 查询用户
+    user = user_crud.get_user_by_openid(db, x_wx_openid)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="用户不存在，请先登录"
+        )
+
+    return user.id
+
+
+def verify_baby_access(
+    baby_id: int,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+) -> None:
+    """
+    验证用户是否有权限访问该宝宝的数据
+    """
+    if not baby_crud.is_family_member(db, baby_id, user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="您没有权限访问此宝宝的信息"
+        )
+
+
+def verify_baby_admin(
+    baby_id: int,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+) -> None:
+    """
+    验证用户是否是该宝宝的管理员
+    """
+    if not baby_crud.is_admin(db, baby_id, user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="您没有管理员权限"
+        )

@@ -1,0 +1,18 @@
+"""
+API 路由模块
+"""
+from .users import router as users_router
+from .babies import router as babies_router
+from .feeding import router as feeding_router
+from .diaper import router as diaper_router
+from .sleep import router as sleep_router
+from .growth import router as growth_router
+
+__all__ = [
+    "users_router",
+    "babies_router",
+    "feeding_router",
+    "diaper_router",
+    "sleep_router",
+    "growth_router",
+]
