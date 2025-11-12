@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     mysql_address: str = "127.0.0.1:3306"
     mysql_database: str = "baby_record"
 
+    # 微信小程序配置
+    wx_appid: str = ""
+    wx_appsecret: str = ""
+    
     # JWT配置（未来用于认证）
     secret_key: str = "your-secret-key-change-in-production"
     algorithm: str = "HS256"

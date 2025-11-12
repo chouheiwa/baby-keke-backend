@@ -136,3 +136,7 @@ dmypy.json
 .pyre/
 
 .idea
+
+# Alembic
+# 保留迁移脚本版本目录，这些应该被提交到版本控制
+# alembic/versions/*.py 需要被追踪

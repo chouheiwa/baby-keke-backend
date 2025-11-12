@@ -11,11 +11,14 @@ sql/
 └── tables/                    # 各表的DDL脚本
     ├── 01_users.sql           # 用户表
     ├── 02_babies.sql          # 宝宝信息表
-    ├── 03_baby_family.sql     # 宝宝-家庭成员关系表
+    ├── 03_baby_family_v2.sql  # 宝宝-家庭成员关系表
     ├── 04_feeding_records.sql # 喂养记录表
     ├── 05_diaper_records.sql  # 排便记录表
     ├── 06_sleep_records.sql   # 睡眠记录表
-    └── 07_growth_records.sql  # 生长发育记录表
+    ├── 07_growth_records.sql  # 生长发育记录表
+    ├── 08_invitations.sql     # 家庭邀请表
+    ├── 09_user_sessions.sql   # 用户会话表
+    └── 10_files.sql           # 文件存储表（COS）
 ```
 
 ## 使用方法
@@ -57,11 +60,14 @@ source /path/to/sql/tables/01_users.sql
 
 1. 01_users.sql（无依赖）
 2. 02_babies.sql（依赖 users）
-3. 03_baby_family.sql（依赖 users, babies）
+3. 03_baby_family_v2.sql（依赖 users, babies）
 4. 04_feeding_records.sql（依赖 babies, users）
 5. 05_diaper_records.sql（依赖 babies, users）
 6. 06_sleep_records.sql（依赖 babies, users）
 7. 07_growth_records.sql（依赖 babies, users）
+8. 08_invitations.sql（依赖 babies, users）
+9. 09_user_sessions.sql（依赖 users）
+10. 10_files.sql（依赖 users）
 
 ## 数据库信息
 
@@ -73,40 +79,55 @@ source /path/to/sql/tables/01_users.sql
 
 ## 表说明
 
-### 用户相关表（3张）
+### 用户相关表（5张）
 
 1. **users** - 用户表
    - 存储微信用户基本信息
    - 主键: id
    - 唯一键: openid
 
-2. **babies** - 宝宝信息表
+2. **user_sessions** - 用户会话表
+   - 存储微信登录会话信息（openid、session_key）
+   - 外键: user_id → users(id)
+   - 级联删除: 删除用户时自动删除会话
+
+3. **babies** - 宝宝信息表
    - 存储宝宝基本信息
    - 外键: created_by → users(id)
 
-3. **baby_family** - 宝宝-家庭成员关系表
+4. **baby_family** - 宝宝-家庭成员关系表
    - 管理宝宝和家庭成员的多对多关系
    - 外键: baby_id → babies(id), user_id → users(id)
    - 级联删除: 删除宝宝时自动删除关系
 
+5. **invitations** - 家庭邀请表
+   - 管理家庭成员邀请
+   - 外键: baby_id → babies(id), inviter_id → users(id)
+   - 级联删除: 删除宝宝时自动删除邀请
+
+6. **files** - 文件存储表
+   - 存储腾讯云COS对象存储的文件元数据
+   - 外键: uploaded_by → users(id)
+   - 支持关联到不同业务模块（宝宝头像、记录照片等）
+
 ### 记录相关表（4张）
 
-4. **feeding_records** - 喂养记录表
+6. **feeding_records** - 喂养记录表
    - 记录母乳/奶粉/辅食喂养
    - 外键: baby_id → babies(id), user_id → users(id)
    - 级联删除: 删除宝宝时自动删除记录
 
-5. **diaper_records** - 排便记录表
+7. **diaper_records** - 排便记录表
    - 记录尿/便情况
    - 外键: baby_id → babies(id), user_id → users(id)
    - 级联删除: 删除宝宝时自动删除记录
 
-6. **sleep_records** - 睡眠记录表
+8. **sleep_records** - 睡眠记录表
    - 记录睡眠时间和质量
    - 外键: baby_id → babies(id), user_id → users(id)
    - 级联删除: 删除宝宝时自动删除记录
 
-7. **growth_records** - 生长发育记录表
+9. **growth_records** - 生长发育记录表
    - 记录体重、身高、头围
    - 外键: baby_id → babies(id), user_id → users(id)
    - 级联删除: 删除宝宝时自动删除记录
@@ -125,12 +146,16 @@ source /path/to/sql/tables/01_users.sql
 
 ```sql
 -- 警告：此操作会删除所有数据！
+-- 必须按照外键依赖的逆序删除
 DROP TABLE IF EXISTS `feeding_records`;
 DROP TABLE IF EXISTS `diaper_records`;
 DROP TABLE IF EXISTS `sleep_records`;
 DROP TABLE IF EXISTS `growth_records`;
+DROP TABLE IF EXISTS `invitations`;
 DROP TABLE IF EXISTS `baby_family`;
+DROP TABLE IF EXISTS `files`;
 DROP TABLE IF EXISTS `babies`;
+DROP TABLE IF EXISTS `user_sessions`;
 DROP TABLE IF EXISTS `users`;
 ```
 

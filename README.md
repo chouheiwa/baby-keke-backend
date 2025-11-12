@@ -45,13 +45,22 @@ pip install -r requirements.txt
 #### 开发环境（默认）
 
 ```bash
-# 复制配置文件
-cp .env.example .env
+# 方式1: 使用已创建的 .env 文件
+# 直接编辑 .env 文件，填写以下配置：
 
-# 编辑配置
-# ENV=development
-# MYSQL_ADDRESS=127.0.0.1:3306
-# MYSQL_DATABASE=baby_record
+# 数据库配置
+MYSQL_USERNAME=root
+MYSQL_PASSWORD=your_password
+MYSQL_ADDRESS=127.0.0.1:3306
+MYSQL_DATABASE=baby_record
+
+# 微信小程序配置（重要！）
+WX_APPID=your_wechat_appid
+WX_APPSECRET=your_wechat_appsecret
+
+# 方式2: 从示例文件复制
+cp .env.example .env
+# 然后编辑 .env 文件
 ```
 
 #### 测试环境
@@ -313,6 +322,12 @@ curl -X POST \
 | `MYSQL_PASSWORD` | MySQL密码 | `your_password` | 是 |
 | `MYSQL_ADDRESS` | MySQL地址:端口 | `127.0.0.1:3306` | 是 |
 | `MYSQL_DATABASE` | 数据库名称 | `baby_record` | 是 |
+| `WX_APPID` | 微信小程序AppID | `wx1234567890abcdef` | 是 |
+| `WX_APPSECRET` | 微信小程序AppSecret | `your_appsecret` | 是 |
+| `COS_SECRET_ID` | 腾讯云COS SecretId | `AKID***` | 本地开发必填 |
+| `COS_SECRET_KEY` | 腾讯云COS SecretKey | `***` | 本地开发必填 |
+| `COS_REGION` | COS地域 | `ap-guangzhou` | 是 |
+| `COS_BUCKET` | 存储桶名称 | `baby-record-files` | 是 |
 | `SECRET_KEY` | JWT密钥 | `your-secret-key` | 生产必填 |
 | `DEBUG` | 调试模式 | `true` / `false` | 否 |
 
@@ -320,6 +335,11 @@ curl -X POST \
 - **开发环境** (`ENV=development`): 默认环境，使用 `.env` 配置文件
 - **测试环境** (`ENV=test`): 使用 `.env.test` 配置文件，测试数据库地址已配置
 - **生产环境** (`ENV=production`): 使用 `.env.production` 配置文件，需配置强密钥
+
+**COS配置说明**:
+- **微信云托管部署**: 无需配置 `COS_SECRET_ID` 和 `COS_SECRET_KEY`，系统自动使用临时密钥
+- **本地开发**: 必须配置 `COS_SECRET_ID` 和 `COS_SECRET_KEY`
+- 详细配置说明请参考 [COS_CONFIG.md](./COS_CONFIG.md)
 
 ## 开发指南
 

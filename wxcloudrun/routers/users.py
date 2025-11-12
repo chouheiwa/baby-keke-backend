@@ -5,9 +5,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from wxcloudrun.core.database import get_db
-from wxcloudrun.schemas.user import UserCreate, UserUpdate, UserResponse, UserLogin
+from wxcloudrun.schemas.user import UserCreate, UserUpdate, UserResponse
+from wxcloudrun.schemas.session import LoginRequest, LoginResponse
 from wxcloudrun.crud import user as user_crud
+from wxcloudrun.crud import session as session_crud
 from wxcloudrun.utils.deps import get_current_user_id
+from wxcloudrun.utils.wechat import get_wechat_api, WeChatAPIError
 
 router = APIRouter(
     prefix="/api/users",
@@ -15,31 +18,80 @@ router = APIRouter(
 )
 
 
-@router.post("/login", response_model=UserResponse, status_code=status.HTTP_200_OK)
-def login(
-    user_data: UserLogin,
+@router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+async def login(
+    login_data: LoginRequest,
     db: Annotated[Session, Depends(get_db)]
 ):
     """
-    小程序快捷登录接口
-    - 如果用户已存在，直接返回用户信息
-    - 如果用户不存在，自动创建新用户
+    小程序登录接口
+    
+    流程：
+    1. 接收小程序的 code
+    2. 调用微信 code2Session 接口获取 openid 和 session_key
+    3. 查询或创建用户
+    4. 创建或更新会话记录
+    5. 返回用户信息和会话信息
     """
-    # 检查用户是否已存在
-    db_user = user_crud.get_user_by_openid(db, user_data.openid)
-
-    if db_user:
-        # 用户已存在，直接返回
-        return db_user
-
-    # 用户不存在，自动创建新用户
-    new_user = UserCreate(
-        openid=user_data.openid,
-        nickname=user_data.nickname,
-        avatar_url=user_data.avatar_url
-    )
-
-    return user_crud.create_user(db, new_user)
+    try:
+        # 1. 调用微信 API 获取 openid 和 session_key
+        wechat_api = get_wechat_api()
+        wx_result = await wechat_api.code2session(login_data.code)
+        
+        openid = wx_result.get("openid")
+        session_key = wx_result.get("session_key")
+        unionid = wx_result.get("unionid")
+        
+        if not openid or not session_key:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="获取微信用户信息失败"
+            )
+        
+        # 2. 查询或创建用户
+        db_user = user_crud.get_user_by_openid(db, openid)
+        is_new_user = False
+        
+        if not db_user:
+            # 用户不存在，创建新用户
+            new_user = UserCreate(
+                openid=openid,
+                nickname=None  # 昵称由用户后续填写
+            )
+            db_user = user_crud.create_user(db, new_user)
+            is_new_user = True
+        
+        # 3. 创建或更新会话记录
+        db_session = session_crud.create_or_update_session(
+            db=db,
+            user_id=db_user.id,
+            openid=openid,
+            session_key=session_key,
+            unionid=unionid,
+            expires_days=30
+        )
+        
+        # 4. 返回登录响应
+        return LoginResponse(
+            user_id=db_user.id,
+            openid=db_user.openid,
+            nickname=db_user.nickname,
+            phone=db_user.phone,
+            unionid=unionid,
+            session_expires_at=db_session.expires_at,
+            is_new_user=is_new_user
+        )
+        
+    except WeChatAPIError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"微信登录失败: {e.errmsg}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"登录失败: {str(e)}"
+        )
 
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)

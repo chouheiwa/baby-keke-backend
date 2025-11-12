@@ -4,13 +4,48 @@
 from typing import Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 from wxcloudrun.models.sleep import SleepRecord
+from wxcloudrun.models.user import User
+from wxcloudrun.models.baby import BabyFamily
 from wxcloudrun.schemas.sleep import SleepRecordCreate, SleepRecordUpdate
+from wxcloudrun.schemas.user import CreatorInfo
+
+
+def _attach_creator_info(db: Session, record: SleepRecord) -> None:
+    """给记录附加创建者信息"""
+    if not record:
+        return
+
+    # 查询创建者信息和关系
+    creator_query = (
+        db.query(User, BabyFamily.relation)
+        .outerjoin(BabyFamily, and_(
+            BabyFamily.user_id == User.id,
+            BabyFamily.baby_id == record.baby_id
+        ))
+        .filter(User.id == record.user_id)
+        .first()
+    )
+
+    if creator_query:
+        user, relation = creator_query
+        record.created_by = CreatorInfo(
+            user_id=user.id,
+            nickname=user.nickname,
+            relation=relation,
+            relation_display=relation
+        )
+    else:
+        record.created_by = None
 
 
 def get_sleep_record(db: Session, record_id: int) -> Optional[SleepRecord]:
     """根据ID获取睡眠记录"""
-    return db.query(SleepRecord).filter(SleepRecord.id == record_id).first()
+    record = db.query(SleepRecord).filter(SleepRecord.id == record_id).first()
+    if record:
+        _attach_creator_info(db, record)
+    return record
 
 
 def get_sleep_records_by_baby(
@@ -29,7 +64,13 @@ def get_sleep_records_by_baby(
     if end_date:
         query = query.filter(SleepRecord.start_time <= end_date)
 
-    return query.order_by(SleepRecord.start_time.desc()).offset(skip).limit(limit).all()
+    records = query.order_by(SleepRecord.start_time.desc()).offset(skip).limit(limit).all()
+
+    # 为每条记录附加创建者信息
+    for record in records:
+        _attach_creator_info(db, record)
+
+    return records
 
 
 def create_sleep_record(db: Session, record: SleepRecordCreate, user_id: int) -> SleepRecord:

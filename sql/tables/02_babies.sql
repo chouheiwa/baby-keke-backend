@@ -5,9 +5,11 @@
 CREATE TABLE IF NOT EXISTS `babies` (
   `id` INT(11) NOT NULL AUTO_INCREMENT COMMENT '宝宝ID',
   `name` VARCHAR(50) NOT NULL COMMENT '宝宝姓名',
+  `nickname` VARCHAR(100) DEFAULT NULL COMMENT '宝宝昵称',
   `gender` ENUM('male','female','unknown') NOT NULL DEFAULT 'unknown' COMMENT '性别',
   `birthday` TIMESTAMP NOT NULL COMMENT '出生日期',
-  `avatar_url` VARCHAR(500) DEFAULT NULL COMMENT '宝宝头像',
+  `birth_weight` INT(11) DEFAULT NULL COMMENT '出生体重(g)',
+  `birth_height` INT(11) DEFAULT NULL COMMENT '出生身长(cm)',
   `notes` TEXT COMMENT '备注',
   `created_by` INT(11) NOT NULL COMMENT '创建人ID',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

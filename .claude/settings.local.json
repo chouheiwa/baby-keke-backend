@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:cloud.tencent.com)",
+      "Bash(source venv/bin/activate)",
+      "Bash(pip install:*)",
+      "WebFetch(domain:developers.weixin.qq.com)",
+      "Bash(alembic revision:*)",
+      "Bash(alembic current:*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(alembic stamp:*)",
+      "Bash(alembic downgrade:*)",
+      "Bash(python -c:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

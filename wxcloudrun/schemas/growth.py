@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional
 from decimal import Decimal
 from pydantic import BaseModel, Field, ConfigDict
+from .user import CreatorInfo
 
 
 class GrowthRecordBase(BaseModel):
@@ -35,6 +36,7 @@ class GrowthRecordResponse(GrowthRecordBase):
     id: int = Field(..., description="记录ID")
     baby_id: int = Field(..., description="宝宝ID")
     user_id: int = Field(..., description="记录人ID")
+    created_by: Optional[CreatorInfo] = Field(None, description="创建者信息")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
 

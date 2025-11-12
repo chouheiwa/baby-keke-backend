@@ -67,6 +67,7 @@ async def health_check():
 
 # 注册所有路由
 from wxcloudrun.routers import (
+    auth_router,
     users_router,
     babies_router,
     feeding_router,
@@ -75,6 +76,7 @@ from wxcloudrun.routers import (
     growth_router
 )
 
+app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(babies_router)
 app.include_router(feeding_router)

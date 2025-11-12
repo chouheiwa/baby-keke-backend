@@ -7,9 +7,12 @@ CREATE TABLE IF NOT EXISTS `feeding_records` (
   `baby_id` INT(11) NOT NULL COMMENT '宝宝ID',
   `user_id` INT(11) NOT NULL COMMENT '记录人ID',
   `feeding_type` ENUM('breast','formula','solid') NOT NULL COMMENT '喂养类型(breast母乳/formula奶粉/solid辅食)',
-  `breast_side` ENUM('left','right','both') DEFAULT NULL COMMENT '哺乳侧(left左/right右/both双侧)',
-  `duration_left` INT(11) DEFAULT NULL COMMENT '左侧时长(分钟)',
-  `duration_right` INT(11) DEFAULT NULL COMMENT '右侧时长(分钟)',
+
+  -- 母乳喂养字段
+  `feeding_sequence` JSON DEFAULT NULL COMMENT '喂养序列(母乳交替记录)',
+  `breast_side` ENUM('left','right','both','unknown') DEFAULT NULL COMMENT '哺乳侧(用于快速记录模式)',
+
+  -- 奶粉/辅食字段
   `amount` INT(11) DEFAULT NULL COMMENT '奶量(ml)或食量(g)',
   `food_name` VARCHAR(100) DEFAULT NULL COMMENT '食物名称',
   `start_time` TIMESTAMP NOT NULL COMMENT '开始时间',

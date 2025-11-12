@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, Header, status
 from sqlalchemy.orm import Session
 from wxcloudrun.core.database import get_db
 from wxcloudrun.crud import user as user_crud, baby as baby_crud
+from wxcloudrun.crud import session as session_crud
 
 
 def get_current_user_id(
@@ -29,6 +30,13 @@ def get_current_user_id(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户不存在，请先登录"
+        )
+
+    # 校验登录态是否有效（未登录或过期统一返回 401）
+    if not session_crud.is_session_valid(db, x_wx_openid):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="登录态已过期或未登录，请重新登录"
         )
 
     return user.id

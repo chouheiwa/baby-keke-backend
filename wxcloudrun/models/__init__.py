@@ -2,6 +2,7 @@
 数据库模型模块
 """
 from .user import User
+from .session import UserSession
 from .baby import Baby, BabyFamily
 from .feeding import FeedingRecord
 from .diaper import DiaperRecord
@@ -10,6 +11,7 @@ from .growth import GrowthRecord
 
 __all__ = [
     "User",
+    "UserSession",
     "Baby",
     "BabyFamily",
     "FeedingRecord",

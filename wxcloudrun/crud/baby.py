@@ -31,7 +31,9 @@ def get_babies(db: Session, skip: int = 0, limit: int = 100) -> list[Baby]:
 
 def create_baby(db: Session, baby: BabyCreate, creator_id: int) -> Baby:
     """创建宝宝"""
-    db_baby = Baby(**baby.model_dump(), created_by=creator_id)
+    # 仅提取 Baby 实体字段，排除家庭关系的扩展字段
+    baby_data = baby.model_dump(exclude={"relation", "relation_display"})
+    db_baby = Baby(**baby_data, created_by=creator_id)
     db.add(db_baby)
     db.commit()
     db.refresh(db_baby)
@@ -40,7 +42,9 @@ def create_baby(db: Session, baby: BabyCreate, creator_id: int) -> Baby:
     db_family = BabyFamily(
         baby_id=db_baby.id,
         user_id=creator_id,
-        is_admin=1  # 创建者默认为管理员
+        is_admin=1,  # 创建者默认为管理员
+        relation=baby.relation,
+        relation_display=baby.relation_display,
     )
     db.add(db_family)
     db.commit()

@@ -23,9 +23,11 @@ class FeedingRecord(Base):
     )
 
     # 母乳喂养字段
-    breast_side = Column(Enum('left', 'right', 'both', name='breast_side_enum'), comment='哺乳侧(left左/right右/both双侧)')
-    duration_left = Column(Integer, comment='左侧时长(分钟)')
-    duration_right = Column(Integer, comment='右侧时长(分钟)')
+    feeding_sequence = Column(Text, comment='喂养序列JSON(母乳交替记录)')
+    breast_side = Column(
+        Enum('left', 'right', 'both', 'unknown', name='breast_side_enum'),
+        comment='哺乳侧(用于快速记录模式)'
+    )
 
     # 奶粉喂养字段
     amount = Column(Integer, comment='奶量(ml)或食量(g)')
