@@ -13,31 +13,64 @@ from wxcloudrun.schemas.user import CreatorInfo
 
 
 def _attach_creator_info(db: Session, record: DiaperRecord) -> None:
-    """给记录附加创建者信息"""
     if not record:
         return
 
-    # 查询创建者信息和关系
-    creator_query = (
-        db.query(User, BabyFamily.relation)
-        .outerjoin(BabyFamily, and_(
-            BabyFamily.user_id == User.id,
-            BabyFamily.baby_id == record.baby_id
-        ))
-        .filter(User.id == record.user_id)
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if not user:
+        record.created_by = None
+        return
+
+    family_with_relation = (
+        db.query(BabyFamily)
+        .filter(
+            BabyFamily.user_id == user.id,
+            BabyFamily.baby_id == record.baby_id,
+            BabyFamily.relation.isnot(None)
+        )
+        .order_by(BabyFamily.id.desc())
         .first()
     )
 
-    if creator_query:
-        user, relation = creator_query
-        record.created_by = CreatorInfo(
-            user_id=user.id,
-            nickname=user.nickname,
-            relation=relation,
-            relation_display=relation
-        )
+    relation = None
+    relation_display = None
+    if family_with_relation:
+        relation = family_with_relation.relation
+        relation_display = family_with_relation.relation_display
     else:
-        record.created_by = None
+        family_any = (
+            db.query(BabyFamily)
+            .filter(
+                BabyFamily.user_id == user.id,
+                BabyFamily.baby_id == record.baby_id
+            )
+            .order_by(BabyFamily.id.desc())
+            .first()
+        )
+        if family_any:
+            relation = family_any.relation
+            relation_display = family_any.relation_display
+        else:
+            relation = None
+            relation_display = None
+
+    relation_map = {
+        'mom': '妈妈',
+        'dad': '爸爸',
+        'grandpa_p': '爷爷',
+        'grandma_p': '奶奶',
+        'grandpa_m': '外公',
+        'grandma_m': '外婆',
+        'other': '其他'
+    }
+    relation_display = relation_display or relation_map.get(relation, relation)
+
+    record.created_by = CreatorInfo(
+        user_id=user.id,
+        nickname=user.nickname,
+        relation=relation,
+        relation_display=relation_display
+    )
 
 
 def get_diaper_record(db: Session, record_id: int) -> Optional[DiaperRecord]:
