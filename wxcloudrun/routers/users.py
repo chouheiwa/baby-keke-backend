@@ -2,6 +2,7 @@
 用户相关的 API 路由
 """
 from typing import Annotated
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from wxcloudrun.core.database import get_db
@@ -16,6 +17,8 @@ router = APIRouter(
     prefix="/api/users",
     tags=["用户管理"]
 )
+
+logger = logging.getLogger(__name__)
 
 
 @router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
@@ -34,14 +37,18 @@ async def login(
     5. 返回用户信息和会话信息
     """
     try:
+        logger.info("/api/users/login: received code")
         # 1. 调用微信 API 获取 openid 和 session_key
         wechat_api = get_wechat_api()
+        logger.info("/api/users/login: calling code2session")
         wx_result = await wechat_api.code2session(login_data.code)
+        logger.info("/api/users/login: code2session returned")
         
         openid = wx_result.get("openid")
         session_key = wx_result.get("session_key")
         unionid = wx_result.get("unionid")
         
+        logger.info(f"/api/users/login: openid={openid}, unionid={unionid}, session_key_received={'yes' if session_key else 'no'}")
         if not openid or not session_key:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -60,6 +67,9 @@ async def login(
             )
             db_user = user_crud.create_user(db, new_user)
             is_new_user = True
+            logger.info(f"/api/users/login: created new user id={db_user.id} openid={openid}")
+        else:
+            logger.info(f"/api/users/login: existing user id={db_user.id} openid={openid}")
         
         # 3. 创建或更新会话记录
         db_session = session_crud.create_or_update_session(
@@ -70,9 +80,10 @@ async def login(
             unionid=unionid,
             expires_days=30
         )
+        logger.info(f"/api/users/login: session updated openid={openid} expires_at={db_session.expires_at}")
         
         # 4. 返回登录响应
-        return LoginResponse(
+        response = LoginResponse(
             user_id=db_user.id,
             openid=db_user.openid,
             nickname=db_user.nickname,
@@ -81,13 +92,17 @@ async def login(
             session_expires_at=db_session.expires_at,
             is_new_user=is_new_user
         )
+        logger.info(f"/api/users/login: success user_id={db_user.id} openid={openid} is_new_user={is_new_user}")
+        return response
         
     except WeChatAPIError as e:
+        logger.error(f"/api/users/login: WeChatAPIError errcode={e.errcode} errmsg={e.errmsg}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"微信登录失败: {e.errmsg}"
         )
     except Exception as e:
+        logger.exception("/api/users/login: unexpected error")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"登录失败: {str(e)}"

@@ -4,7 +4,9 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from sqlalchemy.orm import Session
+import logging
 from wxcloudrun.models.session import UserSession
+logger = logging.getLogger(__name__)
 
 
 def create_or_update_session(
@@ -41,6 +43,7 @@ def create_or_update_session(
         db_session.session_key = session_key
         db_session.unionid = unionid
         db_session.expires_at = expires_at
+        logger.info(f"crud.session: update session openid={openid} expires_at={expires_at}")
     else:
         # 创建新会话
         db_session = UserSession(
@@ -51,6 +54,7 @@ def create_or_update_session(
             expires_at=expires_at
         )
         db.add(db_session)
+        logger.info(f"crud.session: create session openid={openid} expires_at={expires_at}")
     
     db.commit()
     db.refresh(db_session)
@@ -170,8 +174,8 @@ def update_session_key(
     # 更新会话密钥和过期时间
     db_session.session_key = new_session_key
     db_session.expires_at = datetime.now() + timedelta(days=expires_days)
+    logger.info(f"crud.session: update session_key openid={openid} expires_at={db_session.expires_at}")
     
     db.commit()
     db.refresh(db_session)
     return db_session
-

@@ -2,6 +2,7 @@
 微信 API 工具类
 """
 import httpx
+import logging
 from typing import Dict, Optional
 from wxcloudrun.core.config import get_settings
 
@@ -24,6 +25,7 @@ class WeChatAPI:
         self.appid = settings.wx_appid
         self.appsecret = settings.wx_appsecret
         self.verify = settings.ca_bundle_path or settings.http_verify
+        self.logger = logging.getLogger(__name__)
         
         if not self.appid or not self.appsecret:
             raise ValueError("微信小程序 AppID 和 AppSecret 未配置")
@@ -53,12 +55,15 @@ class WeChatAPI:
             "grant_type": "authorization_code"
         }
         
+        self.logger.info("WeChatAPI.code2session: request begin")
         async with httpx.AsyncClient(verify=self.verify) as client:
             response = await client.get(url, params=params)
             data = response.json()
+        self.logger.info(f"WeChatAPI.code2session: response received errcode={data.get('errcode')} openid={data.get('openid')}")
         
         # 检查错误
         if "errcode" in data and data["errcode"] != 0:
+            self.logger.error(f"WeChatAPI.code2session: error errcode={data.get('errcode')} errmsg={data.get('errmsg')}")
             raise WeChatAPIError(data["errcode"], data.get("errmsg", "未知错误"))
         
         return {
@@ -100,10 +105,11 @@ class WeChatAPI:
             async with httpx.AsyncClient(verify=self.verify) as client:
                 response = await client.get(url, params=params)
                 data = response.json()
-            
+            self.logger.info(f"WeChatAPI.check_session_key: response errcode={data.get('errcode')} openid={openid}")
             # errcode=0 表示有效，errcode=87009 表示无效
             return data.get("errcode") == 0
         except Exception:
+            self.logger.exception("WeChatAPI.check_session_key: exception")
             return False
     
     async def reset_session_key(self, openid: str, session_key: str) -> Dict[str, str]:
@@ -137,12 +143,15 @@ class WeChatAPI:
             "sig_method": "hmac_sha256"
         }
         
+        self.logger.info("WeChatAPI.reset_session_key: request begin")
         async with httpx.AsyncClient(verify=self.verify) as client:
             response = await client.post(url, params=params, json=data)
             result = response.json()
+        self.logger.info(f"WeChatAPI.reset_session_key: response errcode={result.get('errcode')} openid={result.get('openid')}")
         
         # 检查错误
         if "errcode" in result and result["errcode"] != 0:
+            self.logger.error(f"WeChatAPI.reset_session_key: error errcode={result.get('errcode')} errmsg={result.get('errmsg')}")
             raise WeChatAPIError(result["errcode"], result.get("errmsg", "未知错误"))
         
         return {
@@ -170,12 +179,15 @@ class WeChatAPI:
             "secret": self.appsecret
         }
         
+        self.logger.info("WeChatAPI._get_access_token: request begin")
         async with httpx.AsyncClient(verify=self.verify) as client:
             response = await client.get(url, params=params)
             data = response.json()
+        self.logger.info(f"WeChatAPI._get_access_token: response errcode={data.get('errcode')} success={'access_token' in data}")
         
         # 检查错误
         if "errcode" in data and data["errcode"] != 0:
+            self.logger.error(f"WeChatAPI._get_access_token: error errcode={data.get('errcode')} errmsg={data.get('errmsg')}")
             raise WeChatAPIError(data["errcode"], data.get("errmsg", "未知错误"))
         
         return data.get("access_token")

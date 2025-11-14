@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import logging
 from fastapi.middleware.cors import CORSMiddleware
 from wxcloudrun.core.config import get_settings
 from wxcloudrun.core.database import Base, engine
@@ -28,6 +29,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     """应用启动时执行"""
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     # 初始化数据库表
     Base.metadata.create_all(bind=engine)
 

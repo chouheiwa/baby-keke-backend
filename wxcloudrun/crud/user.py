@@ -3,7 +3,9 @@
 """
 from typing import Optional
 from sqlalchemy.orm import Session
+import logging
 from wxcloudrun.models.user import User
+logger = logging.getLogger(__name__)
 from wxcloudrun.schemas.user import UserCreate, UserUpdate
 
 
@@ -28,6 +30,7 @@ def create_user(db: Session, user: UserCreate) -> User:
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    logger.info(f"crud.user: create user id={db_user.id} openid={db_user.openid}")
     return db_user
 
 
@@ -44,6 +47,7 @@ def update_user(db: Session, user_id: int, user: UserUpdate) -> Optional[User]:
 
     db.commit()
     db.refresh(db_user)
+    logger.info(f"crud.user: update user id={db_user.id}")
     return db_user
 
 
@@ -55,4 +59,5 @@ def delete_user(db: Session, user_id: int) -> bool:
 
     db.delete(db_user)
     db.commit()
+    logger.info(f"crud.user: delete user id={db_user.id}")
     return True
