@@ -12,7 +12,7 @@ RUN apk add ca-certificates
 # 安装依赖包，如需其他依赖包，请到alpine依赖包管理(https://pkgs.alpinelinux.org/packages?name=php8*imagick*&branch=v3.13)查找。
 # 选用国内镜像源以提高下载速度
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tencent.com/g' /etc/apk/repositories \
-&& apk add --update --no-cache python3 py3-pip build-base libffi-dev openssl-dev python3-dev \
+&& apk add --update --no-cache python3 py3-pip build-base libffi-dev openssl-dev python3-dev py3-cffi \
 && rm -rf /var/cache/apk/*
 
 # 拷贝当前项目到/app目录下（.dockerignore中文件除外）
@@ -22,12 +22,12 @@ COPY . /app
 WORKDIR /app
 
 # 使用虚拟环境安装依赖，规避 PEP 668 外部管理限制
-RUN python3 -m venv /opt/venv
+RUN python3 -m venv /opt/venv --system-site-packages
 ENV PATH="/opt/venv/bin:${PATH}"
 
 # 安装依赖到指定的/install文件夹
 # 选用国内镜像源以提高下载速度
-RUN pip config set global.index-url http://mirrors.cloud.tencent.com/pypi/simple \
+RUN pip config set global.index-url https://mirrors.cloud.tencent.com/pypi/simple \
 && pip config set global.trusted-host mirrors.cloud.tencent.com \
 && pip install --upgrade pip \
 && pip install --no-cache-dir -r requirements.txt
