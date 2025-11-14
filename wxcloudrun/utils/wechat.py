@@ -23,6 +23,7 @@ class WeChatAPI:
         settings = get_settings()
         self.appid = settings.wx_appid
         self.appsecret = settings.wx_appsecret
+        self.verify = settings.ca_bundle_path or settings.http_verify
         
         if not self.appid or not self.appsecret:
             raise ValueError("微信小程序 AppID 和 AppSecret 未配置")
@@ -52,7 +53,7 @@ class WeChatAPI:
             "grant_type": "authorization_code"
         }
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=self.verify) as client:
             response = await client.get(url, params=params)
             data = response.json()
         
@@ -96,7 +97,7 @@ class WeChatAPI:
         }
         
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(verify=self.verify) as client:
                 response = await client.get(url, params=params)
                 data = response.json()
             
@@ -136,7 +137,7 @@ class WeChatAPI:
             "sig_method": "hmac_sha256"
         }
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=self.verify) as client:
             response = await client.post(url, params=params, json=data)
             result = response.json()
         
@@ -169,7 +170,7 @@ class WeChatAPI:
             "secret": self.appsecret
         }
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=self.verify) as client:
             response = await client.get(url, params=params)
             data = response.json()
         
@@ -184,4 +185,3 @@ class WeChatAPI:
 def get_wechat_api() -> WeChatAPI:
     """获取微信 API 客户端实例"""
     return WeChatAPI()
-

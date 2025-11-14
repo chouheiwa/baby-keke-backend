@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     secret_key: str = "your-secret-key-change-in-production"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    http_verify: bool = True
+    ca_bundle_path: str | None = None
 
     class Config:
         # 根据环境变量 ENV 加载对应的配置文件
