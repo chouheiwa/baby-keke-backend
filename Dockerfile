@@ -21,6 +21,10 @@ COPY . /app
 # 设定当前的工作目录
 WORKDIR /app
 
+# 使用虚拟环境安装依赖，规避 PEP 668 外部管理限制
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:${PATH}"
+
 # 安装依赖到指定的/install文件夹
 # 选用国内镜像源以提高下载速度
 RUN pip config set global.index-url http://mirrors.cloud.tencent.com/pypi/simple \
