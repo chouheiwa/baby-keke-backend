@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS `feeding_records` (
   `breast_side` ENUM('left','right','both','unknown') DEFAULT NULL COMMENT '哺乳侧(用于快速记录模式)',
 
   -- 奶粉/辅食字段
+  `bottle_content` ENUM('breast','formula') DEFAULT NULL COMMENT '奶瓶内容(母乳/奶粉)',
   `amount` INT(11) DEFAULT NULL COMMENT '奶量(ml)或食量(g)',
   `food_name` VARCHAR(100) DEFAULT NULL COMMENT '食物名称',
   `start_time` TIMESTAMP NOT NULL COMMENT '开始时间',

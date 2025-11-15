@@ -26,6 +26,7 @@ class FeedingRecordBase(BaseModel):
 
     # 奶粉/辅食字段
     amount: Optional[int] = Field(None, ge=0, description="奶量(ml)或食量(g)")
+    bottle_content: Optional[Literal['breast', 'formula']] = Field(None, description="奶瓶内容（breast母乳/formula奶粉）")
 
     # 辅食字段
     food_name: Optional[str] = Field(None, max_length=100, description="食物名称")
@@ -54,6 +55,8 @@ class FeedingRecordCreate(FeedingRecordBase):
         elif self.feeding_type == 'formula':
             if not self.amount:
                 raise ValueError("奶粉喂养必须指定奶量")
+            if not self.bottle_content:
+                raise ValueError("奶瓶喂养必须指定奶瓶内容（母乳/奶粉）")
         elif self.feeding_type == 'solid':
             if not self.food_name:
                 raise ValueError("辅食必须指定食物名称")
@@ -66,6 +69,7 @@ class FeedingRecordUpdate(BaseModel):
     feeding_sequence: Optional[List[FeedingSequenceItem]] = Field(None, description="喂养序列(母乳交替记录)")
     breast_side: Optional[Literal['left', 'right', 'both', 'unknown']] = Field(None, description="哺乳侧(快速模式)")
     amount: Optional[int] = Field(None, ge=0, description="奶量(ml)或食量(g)")
+    bottle_content: Optional[Literal['breast', 'formula']] = Field(None, description="奶瓶内容（母乳/奶粉）")
     food_name: Optional[str] = Field(None, max_length=100, description="食物名称")
     start_time: Optional[datetime] = Field(None, description="开始时间")
     end_time: Optional[datetime] = Field(None, description="结束时间")

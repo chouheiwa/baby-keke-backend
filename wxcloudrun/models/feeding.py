@@ -31,6 +31,10 @@ class FeedingRecord(Base):
 
     # 奶粉喂养字段
     amount = Column(Integer, comment='奶量(ml)或食量(g)')
+    bottle_content = Column(
+        Enum('breast', 'formula', name='bottle_content_enum'),
+        comment='奶瓶内容(母乳/奶粉)'
+    )
 
     # 辅食字段
     food_name = Column(String(100), comment='食物名称')
