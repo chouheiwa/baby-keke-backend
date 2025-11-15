@@ -6,7 +6,14 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from wxcloudrun.core.database import get_db
-from wxcloudrun.schemas.sleep import SleepRecordCreate, SleepRecordUpdate, SleepRecordResponse
+from wxcloudrun.schemas.sleep import (
+    SleepRecordCreate,
+    SleepRecordUpdate,
+    SleepRecordResponse,
+    SleepStartCreate,
+    SleepStopUpdate,
+    SleepAutoCloseUpdate,
+)
 from wxcloudrun.crud import sleep as sleep_crud
 from wxcloudrun.utils.deps import get_current_user_id, verify_baby_access
 
@@ -22,7 +29,6 @@ def create_sleep_record(
     user_id: Annotated[int, Depends(get_current_user_id)],
     db: Annotated[Session, Depends(get_db)]
 ):
-    """创建睡眠记录"""
     verify_baby_access(record.baby_id, user_id, db)
     return sleep_crud.create_sleep_record(db, record, user_id)
 
@@ -42,6 +48,15 @@ def get_sleep_records(
     return sleep_crud.get_sleep_records_by_baby(
         db, baby_id, skip, limit, start_date, end_date
     )
+
+@router.get("/baby/{baby_id}/active", response_model=list[SleepRecordResponse])
+def get_active_sleep_records(
+    baby_id: int,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    verify_baby_access(baby_id, user_id, db)
+    return sleep_crud.get_active_sleep_records_by_baby(db, baby_id)
 
 
 @router.get("/{record_id}", response_model=SleepRecordResponse)
@@ -109,3 +124,84 @@ def get_sleep_stats(
     """获取指定日期范围的睡眠统计"""
     verify_baby_access(baby_id, user_id, db)
     return sleep_crud.get_sleep_stats_by_date(db, baby_id, start_date, end_date)
+@router.post("/start", response_model=SleepRecordResponse, status_code=status.HTTP_201_CREATED)
+def start_sleep_record(
+    payload: SleepStartCreate,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    verify_baby_access(payload.baby_id, user_id, db)
+    return sleep_crud.create_sleep_start(db, payload.baby_id, payload.start_time, user_id, payload.source or 'manual')
+
+@router.post("/start/", response_model=SleepRecordResponse, status_code=status.HTTP_201_CREATED)
+def start_sleep_record_slash(
+    payload: SleepStartCreate,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    verify_baby_access(payload.baby_id, user_id, db)
+    return sleep_crud.create_sleep_start(db, payload.baby_id, payload.start_time, user_id, payload.source or 'manual')
+
+@router.patch("/{record_id}/stop", response_model=SleepRecordResponse)
+def stop_sleep_record(
+    record_id: int,
+    payload: SleepStopUpdate,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    db_record = sleep_crud.get_sleep_record(db, record_id)
+    if not db_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
+    verify_baby_access(db_record.baby_id, user_id, db)
+    updated_record = sleep_crud.stop_sleep_record(db, record_id, payload.end_time)
+    if not updated_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
+    return updated_record
+
+@router.patch("/{record_id}/stop/", response_model=SleepRecordResponse)
+def stop_sleep_record_slash(
+    record_id: int,
+    payload: SleepStopUpdate,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    db_record = sleep_crud.get_sleep_record(db, record_id)
+    if not db_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
+    verify_baby_access(db_record.baby_id, user_id, db)
+    updated_record = sleep_crud.stop_sleep_record(db, record_id, payload.end_time)
+    if not updated_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
+    return updated_record
+
+@router.patch("/{record_id}/auto-close", response_model=SleepRecordResponse)
+def auto_close_sleep_record(
+    record_id: int,
+    payload: SleepAutoCloseUpdate,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    db_record = sleep_crud.get_sleep_record(db, record_id)
+    if not db_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
+    verify_baby_access(db_record.baby_id, user_id, db)
+    updated_record = sleep_crud.auto_close_sleep_record(db, record_id, payload.auto_closed_at)
+    if not updated_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
+    return updated_record
+
+@router.patch("/{record_id}/auto-close/", response_model=SleepRecordResponse)
+def auto_close_sleep_record_slash(
+    record_id: int,
+    payload: SleepAutoCloseUpdate,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    db_record = sleep_crud.get_sleep_record(db, record_id)
+    if not db_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
+    verify_baby_access(db_record.baby_id, user_id, db)
+    updated_record = sleep_crud.auto_close_sleep_record(db, record_id, payload.auto_closed_at)
+    if not updated_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
+    return updated_record
