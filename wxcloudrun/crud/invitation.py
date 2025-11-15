@@ -45,3 +45,11 @@ def create_invitation_for_baby(db: Session, baby_id: int, creator_id: int, ttl_d
     db.commit()
     db.refresh(inv)
     return inv
+
+
+def get_invitation_by_code(db: Session, code: str) -> Optional[Invitation]:
+    return (
+        db.query(Invitation)
+        .filter(Invitation.invite_code == code)
+        .first()
+    )
