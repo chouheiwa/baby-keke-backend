@@ -13,31 +13,74 @@ from wxcloudrun.schemas.user import CreatorInfo
 
 
 def _attach_creator_info(db: Session, record: GrowthRecord) -> None:
-    """给记录附加创建者信息"""
+    """给记录附加创建者信息。
+
+    优先获取在该宝宝下非空的关系，找不到则回退。
+    同时生成中文显示名称（relation_display）。
+    """
     if not record:
         return
 
-    # 查询创建者信息和关系
-    creator_query = (
-        db.query(User, BabyFamily.relation)
-        .outerjoin(BabyFamily, and_(
-            BabyFamily.user_id == User.id,
-            BabyFamily.baby_id == record.baby_id
-        ))
-        .filter(User.id == record.user_id)
+    # 查询用户信息
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if not user:
+        record.created_by = None
+        return
+
+    # 优先获取非空 relation 的家庭成员记录
+    family_with_relation = (
+        db.query(BabyFamily)
+        .filter(
+            BabyFamily.user_id == user.id,
+            BabyFamily.baby_id == record.baby_id,
+            BabyFamily.relation.isnot(None)
+        )
+        .order_by(BabyFamily.id.desc())
         .first()
     )
 
-    if creator_query:
-        user, relation = creator_query
-        record.created_by = CreatorInfo(
-            user_id=user.id,
-            nickname=user.nickname,
-            relation=relation,
-            relation_display=relation
-        )
+    relation = None
+    relation_display = None
+    if family_with_relation:
+        relation = family_with_relation.relation
+        relation_display = family_with_relation.relation_display
     else:
-        record.created_by = None
+        # 回退：任意一条家庭成员记录（可能 relation 为 NULL）
+        family_any = (
+            db.query(BabyFamily)
+            .filter(
+                BabyFamily.user_id == user.id,
+                BabyFamily.baby_id == record.baby_id
+            )
+            .order_by(BabyFamily.id.desc())
+            .first()
+        )
+        if family_any:
+            relation = family_any.relation
+            relation_display = family_any.relation_display
+        else:
+            relation = None
+            relation_display = None
+
+    # 关系显示映射（同时支持枚举代码和中文原值）
+    relation_map = {
+        'mom': '妈妈',
+        'dad': '爸爸',
+        'grandpa_p': '爷爷',
+        'grandma_p': '奶奶',
+        'grandpa_m': '外公',
+        'grandma_m': '外婆',
+        'other': '其他'
+    }
+    # 如果数据库中没有显示名称，则根据枚举映射生成中文显示
+    relation_display = relation_display or relation_map.get(relation, relation)
+
+    record.created_by = CreatorInfo(
+        user_id=user.id,
+        nickname=user.nickname,
+        relation=relation,
+        relation_display=relation_display
+    )
 
 
 def get_growth_record(db: Session, record_id: int) -> Optional[GrowthRecord]:
