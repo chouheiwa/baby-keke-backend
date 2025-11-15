@@ -1,11 +1,12 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
 from wxcloudrun.core.database import get_db
 from wxcloudrun.utils.deps import get_current_user_id
 from wxcloudrun.crud import invitation as invitation_crud, baby as baby_crud
 from wxcloudrun.schemas.baby import BabyFamilyCreate
+from wxcloudrun.schemas.invitation import AcceptInvitationRequest
 
 router = APIRouter(
     prefix="/api/invitations",
@@ -36,11 +37,16 @@ def resolve_invite_code(
 
 @router.post("/accept")
 def accept_invitation(
-    code: str,
+    payload: AcceptInvitationRequest | None = Body(None),
+    code: str | None = Query(None),
     user_id: Annotated[int, Depends(get_current_user_id)],
     db: Annotated[Session, Depends(get_db)]
 ):
-    inv = invitation_crud.get_invitation_by_code(db, code)
+    real_code = (payload.code if payload and payload.code else code)
+    if not real_code:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="缺少邀请码")
+
+    inv = invitation_crud.get_invitation_by_code(db, real_code)
     if not inv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="邀请码不存在")
     if inv.status != 'active' or inv.expire_at <= datetime.utcnow():

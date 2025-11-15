@@ -9,3 +9,7 @@ class InviteCodeResponse(BaseModel):
     status: str = Field(...)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AcceptInvitationRequest(BaseModel):
+    code: str = Field(..., description="邀请码")
