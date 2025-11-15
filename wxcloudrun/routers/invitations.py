@@ -37,10 +37,10 @@ def resolve_invite_code(
 
 @router.post("/accept")
 def accept_invitation(
-    payload: AcceptInvitationRequest | None = Body(None),
-    code: str | None = Query(None),
     user_id: Annotated[int, Depends(get_current_user_id)],
-    db: Annotated[Session, Depends(get_db)]
+    db: Annotated[Session, Depends(get_db)],
+    payload: AcceptInvitationRequest | None = Body(None),
+    code: str | None = Query(None)
 ):
     real_code = (payload.code if payload and payload.code else code)
     if not real_code:
@@ -59,12 +59,13 @@ def accept_invitation(
     if baby_crud.is_family_member(db, inv.baby_id, user_id):
         return {"baby_id": inv.baby_id, "joined": False, "message": "已是家庭成员"}
 
+    # 使用用户选择的角色（若提供）
     family = BabyFamilyCreate(
         baby_id=inv.baby_id,
         user_id=user_id,
         is_admin=0,
-        relation=None,
-        relation_display=None,
+        relation=(payload.relation if payload and payload.relation else None),
+        relation_display=(payload.relation_display if payload and payload.relation_display else None),
     )
     baby_crud.add_family_member(db, family)
     return {"baby_id": inv.baby_id, "joined": True}
