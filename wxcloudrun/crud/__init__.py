@@ -8,6 +8,7 @@ from . import feeding
 from . import diaper
 from . import sleep
 from . import growth
+from . import invitation
 
 __all__ = [
     "user",
@@ -17,4 +18,5 @@ __all__ = [
     "diaper",
     "sleep",
     "growth",
+    "invitation",
 ]

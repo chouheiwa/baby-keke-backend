@@ -23,6 +23,8 @@ from wxcloudrun.models.diaper import DiaperRecord
 from wxcloudrun.models.sleep import SleepRecord
 from wxcloudrun.models.growth import GrowthRecord
 from wxcloudrun.models.session import UserSession
+from wxcloudrun.models.invitation import Invitation
+from wxcloudrun.models.wechat_token import WeChatAccessToken
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -8,6 +8,8 @@ from .feeding import FeedingRecord
 from .diaper import DiaperRecord
 from .sleep import SleepRecord
 from .growth import GrowthRecord
+from .invitation import Invitation
+from .wechat_token import WeChatAccessToken
 
 __all__ = [
     "User",
@@ -18,4 +20,6 @@ __all__ = [
     "DiaperRecord",
     "SleepRecord",
     "GrowthRecord",
+    "Invitation",
+    "WeChatAccessToken",
 ]

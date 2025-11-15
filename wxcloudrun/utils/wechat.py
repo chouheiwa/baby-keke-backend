@@ -3,6 +3,8 @@
 """
 import httpx
 import logging
+import time
+from datetime import datetime, timedelta
 from typing import Dict, Optional
 from wxcloudrun.core.config import get_settings
 
@@ -13,6 +15,9 @@ class WeChatAPIError(Exception):
         self.errcode = errcode
         self.errmsg = errmsg
         super().__init__(f"微信API错误 [{errcode}]: {errmsg}")
+
+
+ 
 
 
 class WeChatAPI:
@@ -161,39 +166,90 @@ class WeChatAPI:
     
     async def _get_access_token(self) -> str:
         """
-        获取接口调用凭证 access_token
-        
-        Returns:
-            access_token 字符串
-            
-        Raises:
-            WeChatAPIError: 微信API返回错误时抛出
-            
-        Note:
-            在实际生产环境中，access_token 应该被缓存（有效期 7200 秒）
+        获取接口调用凭证 access_token（数据库缓存）
         """
+        from wxcloudrun.core.database import SessionLocal
+        from wxcloudrun.crud.wechat_token import get_token, upsert_token
+
+        # 1. 读缓存
+        try:
+            with SessionLocal() as db:
+                rec = get_token(db, self.appid)
+                if rec and rec.expires_at > datetime.utcnow():
+                    return rec.token
+        except Exception:
+            # 数据库不可用或表未创建时，跳过DB缓存
+            pass
+
+        # 2. 请求微信
         url = f"{self.BASE_URL}/cgi-bin/token"
         params = {
             "grant_type": "client_credential",
             "appid": self.appid,
             "secret": self.appsecret
         }
-        
-        self.logger.info("WeChatAPI._get_access_token: request begin")
+        self.logger.info(f"wechat.token: request begin appid={self.appid}")
         async with httpx.AsyncClient(verify=self.verify) as client:
             response = await client.get(url, params=params)
             data = response.json()
-        self.logger.info(f"WeChatAPI._get_access_token: response errcode={data.get('errcode')} success={'access_token' in data}")
-        
-        # 检查错误
+        self.logger.info(f"wechat.token: response errcode={data.get('errcode')} expires_in={data.get('expires_in')}")
         if "errcode" in data and data["errcode"] != 0:
-            self.logger.error(f"WeChatAPI._get_access_token: error errcode={data.get('errcode')} errmsg={data.get('errmsg')}")
             raise WeChatAPIError(data["errcode"], data.get("errmsg", "未知错误"))
-        
-        return data.get("access_token")
+        token = data.get("access_token")
+        expires_in = int(data.get("expires_in", 7200))
+        expire_at_dt = datetime.utcnow() + timedelta(seconds=max(expires_in - 120, 300))
+
+        # 3. 写缓存
+        try:
+            with SessionLocal() as db:
+                upsert_token(db, self.appid, token, expire_at_dt)
+            self.logger.info("wechat.token: cached to db successfully")
+        except Exception:
+            self.logger.warning("wechat.token: cache to db failed, continue without db cache")
+
+        return token
+
+    async def get_wxacode_unlimit(self, scene: str, page: str, width: int = 430) -> bytes:
+        """
+        获取小程序码（无限制）
+
+        文档：https://developers.weixin.qq.com/miniprogram/dev/OpenApiDoc/qrcode-link/qr-code/getUnlimitedQRCode.html
+
+        Args:
+            scene: 自定义场景值（不超过32个可见字符）
+            page: 小程序页面路径，如 "pages/family/join"
+            width: 图片宽度，默认 430
+
+        Returns:
+            PNG 二进制内容
+        """
+        access_token = await self._get_access_token()
+        url = f"{self.BASE_URL}/wxa/getwxacodeunlimit?access_token={access_token}"
+        payload = {
+            "scene": scene,
+            "page": page,
+            "width": width,
+            "check_path": False
+        }
+        self.logger.info(f"wechat.qrcode: request scene={scene} page={page}")
+        async with httpx.AsyncClient(verify=self.verify) as client:
+            resp = await client.post(url, json=payload)
+            content_type = resp.headers.get("Content-Type", "")
+            if content_type.startswith("image/"):
+                self.logger.info("wechat.qrcode: success image returned")
+                return resp.content
+            data = resp.json()
+        self.logger.error(f"wechat.qrcode: error errcode={data.get('errcode')} errmsg={data.get('errmsg')}")
+        raise WeChatAPIError(data.get("errcode", -1), data.get("errmsg", "获取小程序码失败"))
+
 
 
 # 创建全局实例
+_WX_API_INSTANCE: Optional[WeChatAPI] = None
+
+
 def get_wechat_api() -> WeChatAPI:
-    """获取微信 API 客户端实例"""
-    return WeChatAPI()
+    if _WX_API_INSTANCE is None:
+        # 创建单例实例，复用内部配置与缓存逻辑
+        globals()["_WX_API_INSTANCE"] = WeChatAPI()
+    return _WX_API_INSTANCE

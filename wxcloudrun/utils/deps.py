@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Header, status
 from sqlalchemy.orm import Session
 from wxcloudrun.core.database import get_db
+from wxcloudrun.core.config import get_settings
 from wxcloudrun.crud import user as user_crud, baby as baby_crud
 from wxcloudrun.crud import session as session_crud
 
@@ -69,4 +70,13 @@ def verify_baby_admin(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="您没有管理员权限"
+        )
+
+
+def require_admin_token(x_admin_token: Annotated[str | None, Header(alias="X-Admin-Token")] = None) -> None:
+    settings = get_settings()
+    if not settings.admin_token or not x_admin_token or x_admin_token != settings.admin_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="管理员认证失败"
         )

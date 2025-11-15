@@ -8,6 +8,8 @@ from .feeding import router as feeding_router
 from .diaper import router as diaper_router
 from .sleep import router as sleep_router
 from .growth import router as growth_router
+from .invitations import router as invitations_router
+from .policies import router as policies_router
 
 __all__ = [
     "auth_router",
@@ -17,4 +19,6 @@ __all__ = [
     "diaper_router",
     "sleep_router",
     "growth_router",
+    "invitations_router",
+    "policies_router",
 ]
