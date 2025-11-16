@@ -32,15 +32,25 @@ def get_feeding_records(
     baby_id: int,
     user_id: Annotated[int, Depends(get_current_user_id)],
     db: Annotated[Session, Depends(get_db)],
-    skip: int = Query(0, ge=0, description="跳过记录数"),
-    limit: int = Query(100, ge=1, le=500, description="返回记录数"),
-    start_date: Optional[datetime] = Query(None, description="开始日期"),
-    end_date: Optional[datetime] = Query(None, description="结束日期")
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+    feeding_type: Optional[str] = Query(None),
+    sort_by: Optional[str] = Query("start_time"),
+    order: Optional[str] = Query("desc")
 ):
-    """获取宝宝的喂养记录列表"""
     verify_baby_access(baby_id, user_id, db)
     return feeding_crud.get_feeding_records_by_baby(
-        db, baby_id, skip, limit, start_date, end_date
+        db=db,
+        baby_id=baby_id,
+        skip=skip,
+        limit=limit,
+        start_date=start_date,
+        end_date=end_date,
+        feeding_type=feeding_type,
+        sort_by=sort_by,
+        order=order,
     )
 
 

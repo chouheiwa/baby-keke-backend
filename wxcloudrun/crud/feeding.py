@@ -142,27 +142,32 @@ def get_feeding_records_by_baby(
     limit: int = 100,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    feeding_type: Optional[str] = None,
+    sort_by: Optional[str] = "start_time",
+    order: Optional[str] = "desc",
 ) -> list[FeedingRecord]:
-    """获取宝宝的喂养记录"""
     query = db.query(FeedingRecord).filter(FeedingRecord.baby_id == baby_id)
-
+    if feeding_type:
+        query = query.filter(FeedingRecord.feeding_type == feeding_type)
     if start_date:
         query = query.filter(FeedingRecord.start_time >= start_date)
     if end_date:
         query = query.filter(FeedingRecord.start_time <= end_date)
-
-    records = (
-        query.order_by(FeedingRecord.start_time.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-
-    # 为每条记录反序列化和附加创建者信息
+    sort_col = FeedingRecord.start_time
+    if sort_by == "end_time":
+        sort_col = FeedingRecord.end_time
+    elif sort_by == "created_at":
+        sort_col = FeedingRecord.created_at
+    elif sort_by == "updated_at":
+        sort_col = FeedingRecord.updated_at
+    if order == "asc":
+        query = query.order_by(sort_col.asc())
+    else:
+        query = query.order_by(sort_col.desc())
+    records = query.offset(skip).limit(limit).all()
     for record in records:
         _deserialize_feeding_sequence(record)
         _attach_creator_info(db, record)
-
     return records
 
 
