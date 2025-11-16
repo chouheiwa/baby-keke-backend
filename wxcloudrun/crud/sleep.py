@@ -123,10 +123,8 @@ def create_sleep_record(db: Session, record: SleepRecordCreate, user_id: int) ->
         end = payload['end_time']
         dur = int((end - start).total_seconds() // 60)
         payload['duration'] = dur if dur >= 0 else None
-        payload['sleep_type'] = compute_sleep_type(start, end)
         payload['status'] = 'completed'
     else:
-        payload.setdefault('sleep_type', 'nap')
         payload['status'] = 'in_progress'
     db_record = SleepRecord(**payload, user_id=user_id)
     db.add(db_record)
@@ -167,8 +165,6 @@ def get_sleep_stats_by_date(db: Session, baby_id: int, start_date: datetime, end
 
     total_duration = 0
     total_wake_count = 0
-    night_sleep_count = 0
-    nap_count = 0
 
     for record in records:
         if getattr(record, 'status', 'completed') != 'completed':
@@ -177,49 +173,22 @@ def get_sleep_stats_by_date(db: Session, baby_id: int, start_date: datetime, end
             total_duration += record.duration
         total_wake_count += record.wake_count or 0
 
-        if record.sleep_type == 'night':
-            night_sleep_count += 1
-        else:
-            nap_count += 1
-
     return {
         'total_records': len(records),
         'total_duration_minutes': total_duration,
         'total_duration_hours': round(total_duration / 60, 2) if total_duration > 0 else 0,
         'average_duration_minutes': round(total_duration / max(1, total_records_completed(records)), 2),
         'total_wake_count': total_wake_count,
-        'night_sleep_count': night_sleep_count,
-        'nap_count': nap_count,
     }
 
 def total_records_completed(records: list[SleepRecord]) -> int:
     return sum(1 for r in records if getattr(r, 'status', 'completed') == 'completed')
 
-def compute_sleep_type(start: datetime, end: datetime) -> str:
-    night_start_hour = 21
-    night_end_hour = 6
-    def is_night(dt: datetime) -> bool:
-        h = dt.hour
-        return h >= night_start_hour or h < night_end_hour
-    total_minutes = int((end - start).total_seconds() // 60)
-    if total_minutes <= 0:
-        return 'nap'
-    night_minutes = 0
-    cursor = start
-    step = timedelta(minutes=1)
-    while cursor < end:
-        if is_night(cursor):
-            night_minutes += 1
-        cursor += step
-    if night_minutes >= 90 or (start.date() != end.date() and total_minutes >= 120):
-        return 'night'
-    return 'nap'
 
 def create_sleep_start(db: Session, baby_id: int, start_time: datetime, user_id: int, source: str = 'manual') -> SleepRecord:
     db_record = SleepRecord(
         baby_id=baby_id,
         user_id=user_id,
-        sleep_type='nap',
         status='in_progress',
         start_time=start_time,
         source=source,
@@ -239,7 +208,6 @@ def stop_sleep_record(db: Session, record_id: int, end_time: datetime) -> Option
     db_record.end_time = end_time
     dur = int((end_time - db_record.start_time).total_seconds() // 60)
     db_record.duration = dur if dur >= 0 else None
-    db_record.sleep_type = compute_sleep_type(db_record.start_time, end_time)
     db_record.status = 'completed'
     db.commit()
     db.refresh(db_record)

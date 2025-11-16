@@ -8,7 +8,6 @@ from .user import CreatorInfo
 
 
 class SleepRecordBase(BaseModel):
-    sleep_type: Optional[Literal['night', 'nap']] = Field(None, description="睡眠类型")
     start_time: datetime = Field(..., description="入睡时间")
     end_time: Optional[datetime] = Field(None, description="醒来时间")
     duration: Optional[int] = Field(None, ge=0, description="睡眠时长(分钟)")
@@ -25,7 +24,6 @@ class SleepRecordCreate(SleepRecordBase):
 
 
 class SleepRecordUpdate(BaseModel):
-    sleep_type: Optional[Literal['night', 'nap']] = Field(None, description="睡眠类型")
     start_time: Optional[datetime] = Field(None, description="入睡时间")
     end_time: Optional[datetime] = Field(None, description="醒来时间")
     duration: Optional[int] = Field(None, ge=0, description="睡眠时长(分钟)")

@@ -1,7 +1,7 @@
 """
 睡眠记录模型
 """
-from sqlalchemy import Column, Integer, TIMESTAMP, Text, Enum, ForeignKey, Index
+from sqlalchemy import Column, Integer, TIMESTAMP, DateTime, Text, Enum, ForeignKey, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from wxcloudrun.core.database import Base
@@ -15,19 +15,14 @@ class SleepRecord(Base):
     baby_id = Column(Integer, ForeignKey('babies.id', ondelete='CASCADE'), nullable=False, index=True, comment='宝宝ID')
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False, comment='记录人ID')
 
-    sleep_type = Column(
-        Enum('night', 'nap', name='sleep_type_enum'),
-        nullable=False,
-        comment='睡眠类型(night夜间/nap小睡)'
-    )
     status = Column(
         Enum('in_progress', 'completed', 'auto_closed', 'cancelled', name='sleep_status_enum'),
         nullable=False,
         server_default='completed',
         comment='记录状态'
     )
-    start_time = Column(TIMESTAMP, nullable=False, comment='入睡时间')
-    end_time = Column(TIMESTAMP, comment='醒来时间')
+    start_time = Column(DateTime, nullable=False, comment='入睡时间')
+    end_time = Column(DateTime, comment='醒来时间')
     duration = Column(Integer, comment='睡眠时长(分钟)')
     quality = Column(
         Enum('good', 'normal', 'poor', name='sleep_quality_enum'),
@@ -39,7 +34,7 @@ class SleepRecord(Base):
     )
     wake_count = Column(Integer, default=0, comment='夜醒次数')
     notes = Column(Text, comment='备注')
-    auto_closed_at = Column(TIMESTAMP, comment='自动关闭时间')
+    auto_closed_at = Column(DateTime, comment='自动关闭时间')
     source = Column(
         Enum('manual', 'auto', name='sleep_source_enum'),
         nullable=False,
