@@ -77,7 +77,8 @@ from wxcloudrun.routers import (
     sleep_router,
     growth_router,
     invitations_router,
-    policies_router
+    policies_router,
+    home_router
 )
 
 app.include_router(auth_router)
@@ -89,3 +90,4 @@ app.include_router(sleep_router)
 app.include_router(growth_router)
 app.include_router(invitations_router)
 app.include_router(policies_router)
+app.include_router(home_router)
