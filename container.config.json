@@ -1,0 +1,13 @@
+{
+  "containerPort": 80,
+  "minNum": 0,
+  "maxNum": 5,
+  "cpu": 1,
+  "mem": 1,
+  "policyType": "cpu",
+  "policyThreshold": 60,
+  "envParams": {},
+  "customLogs": "stdout",
+  "dataBaseName": "baby_record",
+  "executeSQLs": []
+}
