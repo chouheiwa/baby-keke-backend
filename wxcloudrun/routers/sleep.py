@@ -160,10 +160,13 @@ def stop_sleep_record(
     if not db_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
     verify_baby_access(db_record.baby_id, user_id, db)
-    updated_record = sleep_crud.stop_sleep_record(db, record_id, payload.end_time)
-    if not updated_record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return SleepRecordResponse.model_validate(updated_record, from_attributes=True)
+    try:
+        updated_record = sleep_crud.stop_sleep_record(db, record_id, payload.end_time)
+        if not updated_record:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
+        return SleepRecordResponse.model_validate(updated_record, from_attributes=True)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.patch("/{record_id}/stop/", response_model=SleepRecordResponse)
 def stop_sleep_record_slash(
@@ -176,10 +179,13 @@ def stop_sleep_record_slash(
     if not db_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
     verify_baby_access(db_record.baby_id, user_id, db)
-    updated_record = sleep_crud.stop_sleep_record(db, record_id, payload.end_time)
-    if not updated_record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return SleepRecordResponse.model_validate(updated_record, from_attributes=True)
+    try:
+        updated_record = sleep_crud.stop_sleep_record(db, record_id, payload.end_time)
+        if not updated_record:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
+        return SleepRecordResponse.model_validate(updated_record, from_attributes=True)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 @router.patch("/{record_id}/auto-close", response_model=SleepRecordResponse)
 def auto_close_sleep_record(

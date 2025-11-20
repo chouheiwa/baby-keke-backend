@@ -214,8 +214,10 @@ def stop_sleep_record(db: Session, record_id: int, end_time: datetime) -> Option
     db_record = get_sleep_record(db, record_id)
     if not db_record:
         return None
+    if db_record.status != 'in_progress':
+        raise ValueError(f"睡眠记录状态错误: 当前状态为 {db_record.status}, 只能结束进行中的记录")
     if db_record.end_time:
-        return db_record
+        raise ValueError("睡眠记录已结束，不能重复结束")
     db_record.end_time = end_time
     dur = int((end_time - db_record.start_time).total_seconds() // 60)
     db_record.duration = dur if dur >= 0 else None
