@@ -95,9 +95,11 @@ def get_sleep_records_by_baby(
     db: Session,
     baby_id: int,
     skip: int = 0,
-    limit: int = 100,
+    limit: Optional[int] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    sort_by: str = "start_time",
+    order: str = "desc"
 ) -> list[SleepRecord]:
     """获取宝宝的睡眠记录"""
     query = db.query(SleepRecord).filter(SleepRecord.baby_id == baby_id)
@@ -107,7 +109,15 @@ def get_sleep_records_by_baby(
     if end_date:
         query = query.filter(SleepRecord.start_time <= end_date)
 
-    records = query.order_by(SleepRecord.start_time.desc()).offset(skip).limit(limit).all()
+    # 动态排序
+    sort_column = getattr(SleepRecord, sort_by, SleepRecord.start_time)
+    query = query.order_by(sort_column.desc() if order == "desc" else sort_column.asc())
+
+    query = query.offset(skip)
+    if limit:
+        query = query.limit(limit)
+
+    records = query.all()
 
     # 为每条记录附加创建者信息
     for record in records:
@@ -185,13 +195,14 @@ def total_records_completed(records: list[SleepRecord]) -> int:
     return sum(1 for r in records if getattr(r, 'status', 'completed') == 'completed')
 
 
-def create_sleep_start(db: Session, baby_id: int, start_time: datetime, user_id: int, source: str = 'manual') -> SleepRecord:
+def create_sleep_start(db: Session, baby_id: int, start_time: datetime, user_id: int, source: str = 'manual', position: Optional[str] = None) -> SleepRecord:
     db_record = SleepRecord(
         baby_id=baby_id,
         user_id=user_id,
         status='in_progress',
         start_time=start_time,
         source=source,
+        position=position,
         wake_count=0
     )
     db.add(db_record)
@@ -225,9 +236,11 @@ def auto_close_sleep_record(db: Session, record_id: int, auto_closed_at: datetim
     db.refresh(db_record)
     return db_record
 
-def get_active_sleep_records_by_baby(db: Session, baby_id: int) -> list[SleepRecord]:
-    query = db.query(SleepRecord).filter(SleepRecord.baby_id == baby_id)
-    records = query.filter(SleepRecord.status.in_(['in_progress', 'auto_closed'])).order_by(SleepRecord.start_time.desc()).all()
-    for record in records:
+def get_active_sleep_records_by_baby(db: Session, baby_id: int) -> Optional[SleepRecord]:
+    record = db.query(SleepRecord).filter(
+        SleepRecord.baby_id == baby_id,
+        SleepRecord.status == 'in_progress'
+    ).order_by(SleepRecord.start_time.desc()).first()
+    if record:
         _attach_creator_info(db, record)
-    return records
+    return record

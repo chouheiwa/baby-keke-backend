@@ -24,7 +24,8 @@ def create_growth_record(
 ):
     """创建生长发育记录"""
     verify_baby_access(record.baby_id, user_id, db)
-    return growth_crud.create_growth_record(db, record, user_id)
+    created = growth_crud.create_growth_record(db, record, user_id)
+    return GrowthRecordResponse.model_validate(created, from_attributes=True)
 
 
 @router.get("/baby/{baby_id}", response_model=list[GrowthRecordResponse])
@@ -39,9 +40,10 @@ def get_growth_records(
 ):
     """获取宝宝的生长发育记录列表"""
     verify_baby_access(baby_id, user_id, db)
-    return growth_crud.get_growth_records_by_baby(
+    records = growth_crud.get_growth_records_by_baby(
         db, baby_id, skip, limit, start_date, end_date
     )
+    return [GrowthRecordResponse.model_validate(r, from_attributes=True) for r in records]
 
 
 @router.get("/{record_id}", response_model=GrowthRecordResponse)
@@ -56,7 +58,7 @@ def get_growth_record(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
 
     verify_baby_access(db_record.baby_id, user_id, db)
-    return db_record
+    return GrowthRecordResponse.model_validate(db_record, from_attributes=True)
 
 
 @router.patch("/{record_id}", response_model=GrowthRecordResponse)
@@ -76,7 +78,7 @@ def update_growth_record(
     updated_record = growth_crud.update_growth_record(db, record_id, record)
     if not updated_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return updated_record
+    return GrowthRecordResponse.model_validate(updated_record, from_attributes=True)
 
 
 @router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -110,7 +112,7 @@ def get_latest_growth(
     latest = growth_crud.get_latest_growth(db, baby_id)
     if not latest:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="暂无生长发育记录")
-    return latest
+    return GrowthRecordResponse.model_validate(latest, from_attributes=True)
 
 
 @router.get("/baby/{baby_id}/curve", response_model=list[dict])

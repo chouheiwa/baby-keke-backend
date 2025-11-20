@@ -24,7 +24,8 @@ def create_diaper_record(
 ):
     """创建排便/排尿记录"""
     verify_baby_access(record.baby_id, user_id, db)
-    return diaper_crud.create_diaper_record(db, record, user_id)
+    created = diaper_crud.create_diaper_record(db, record, user_id)
+    return DiaperRecordResponse.model_validate(created, from_attributes=True)
 
 
 @router.get("/baby/{baby_id}", response_model=list[DiaperRecordResponse])
@@ -39,9 +40,10 @@ def get_diaper_records(
 ):
     """获取宝宝的排便/排尿记录列表"""
     verify_baby_access(baby_id, user_id, db)
-    return diaper_crud.get_diaper_records_by_baby(
+    records = diaper_crud.get_diaper_records_by_baby(
         db, baby_id, skip, limit, start_date, end_date
     )
+    return [DiaperRecordResponse.model_validate(r, from_attributes=True) for r in records]
 
 
 @router.get("/{record_id}", response_model=DiaperRecordResponse)
@@ -56,7 +58,7 @@ def get_diaper_record(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
 
     verify_baby_access(db_record.baby_id, user_id, db)
-    return db_record
+    return DiaperRecordResponse.model_validate(db_record, from_attributes=True)
 
 
 @router.patch("/{record_id}", response_model=DiaperRecordResponse)
@@ -76,7 +78,7 @@ def update_diaper_record(
     updated_record = diaper_crud.update_diaper_record(db, record_id, record)
     if not updated_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return updated_record
+    return DiaperRecordResponse.model_validate(updated_record, from_attributes=True)
 
 
 @router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)

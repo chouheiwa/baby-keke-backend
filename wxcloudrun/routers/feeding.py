@@ -24,7 +24,8 @@ def create_feeding_record(
 ):
     """创建喂养记录"""
     verify_baby_access(record.baby_id, user_id, db)
-    return feeding_crud.create_feeding_record(db, record, user_id)
+    created = feeding_crud.create_feeding_record(db, record, user_id)
+    return FeedingRecordResponse.model_validate(created, from_attributes=True)
 
 
 @router.get("/baby/{baby_id}", response_model=list[FeedingRecordResponse])
@@ -41,7 +42,7 @@ def get_feeding_records(
     order: Optional[str] = Query("desc")
 ):
     verify_baby_access(baby_id, user_id, db)
-    return feeding_crud.get_feeding_records_by_baby(
+    records = feeding_crud.get_feeding_records_by_baby(
         db=db,
         baby_id=baby_id,
         skip=skip,
@@ -52,6 +53,7 @@ def get_feeding_records(
         sort_by=sort_by,
         order=order,
     )
+    return [FeedingRecordResponse.model_validate(r, from_attributes=True) for r in records]
 
 
 @router.get("/{record_id}", response_model=FeedingRecordResponse)
@@ -66,7 +68,7 @@ def get_feeding_record(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
 
     verify_baby_access(db_record.baby_id, user_id, db)
-    return db_record
+    return FeedingRecordResponse.model_validate(db_record, from_attributes=True)
 
 
 @router.patch("/{record_id}", response_model=FeedingRecordResponse)
@@ -86,7 +88,7 @@ def update_feeding_record(
     updated_record = feeding_crud.update_feeding_record(db, record_id, record)
     if not updated_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return updated_record
+    return FeedingRecordResponse.model_validate(updated_record, from_attributes=True)
 
 
 @router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -120,4 +122,4 @@ def get_latest_feeding(
     latest = feeding_crud.get_latest_feeding(db, baby_id)
     if not latest:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="暂无喂养记录")
-    return latest
+    return FeedingRecordResponse.model_validate(latest, from_attributes=True)

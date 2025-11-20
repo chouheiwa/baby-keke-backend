@@ -30,7 +30,8 @@ def create_sleep_record(
     db: Annotated[Session, Depends(get_db)]
 ):
     verify_baby_access(record.baby_id, user_id, db)
-    return sleep_crud.create_sleep_record(db, record, user_id)
+    created = sleep_crud.create_sleep_record(db, record, user_id)
+    return SleepRecordResponse.model_validate(created, from_attributes=True)
 
 
 @router.get("/baby/{baby_id}", response_model=list[SleepRecordResponse])
@@ -39,24 +40,28 @@ def get_sleep_records(
     user_id: Annotated[int, Depends(get_current_user_id)],
     db: Annotated[Session, Depends(get_db)],
     skip: int = Query(0, ge=0, description="跳过记录数"),
-    limit: int = Query(100, ge=1, le=500, description="返回记录数"),
+    limit: Optional[int] = Query(None, ge=1, le=500, description="返回记录数"),
     start_date: Optional[datetime] = Query(None, description="开始日期"),
-    end_date: Optional[datetime] = Query(None, description="结束日期")
+    end_date: Optional[datetime] = Query(None, description="结束日期"),
+    sort_by: str = Query("start_time", description="排序字段"),
+    order: str = Query("desc", regex="^(asc|desc)$", description="排序方向")
 ):
     """获取宝宝的睡眠记录列表"""
     verify_baby_access(baby_id, user_id, db)
-    return sleep_crud.get_sleep_records_by_baby(
-        db, baby_id, skip, limit, start_date, end_date
+    records = sleep_crud.get_sleep_records_by_baby(
+        db, baby_id, skip, limit, start_date, end_date, sort_by, order
     )
+    return [SleepRecordResponse.model_validate(r, from_attributes=True) for r in records]
 
-@router.get("/baby/{baby_id}/active", response_model=list[SleepRecordResponse])
+@router.get("/baby/{baby_id}/active", response_model=SleepRecordResponse | None)
 def get_active_sleep_records(
     baby_id: int,
     user_id: Annotated[int, Depends(get_current_user_id)],
     db: Annotated[Session, Depends(get_db)]
 ):
     verify_baby_access(baby_id, user_id, db)
-    return sleep_crud.get_active_sleep_records_by_baby(db, baby_id)
+    record = sleep_crud.get_active_sleep_records_by_baby(db, baby_id)
+    return SleepRecordResponse.model_validate(record, from_attributes=True) if record else None
 
 
 @router.get("/{record_id}", response_model=SleepRecordResponse)
@@ -71,7 +76,7 @@ def get_sleep_record(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="记录不存在")
 
     verify_baby_access(db_record.baby_id, user_id, db)
-    return db_record
+    return SleepRecordResponse.model_validate(db_record, from_attributes=True)
 
 
 @router.patch("/{record_id}", response_model=SleepRecordResponse)
@@ -91,7 +96,7 @@ def update_sleep_record(
     updated_record = sleep_crud.update_sleep_record(db, record_id, record)
     if not updated_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return updated_record
+    return SleepRecordResponse.model_validate(updated_record, from_attributes=True)
 
 
 @router.delete("/{record_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -131,7 +136,8 @@ def start_sleep_record(
     db: Annotated[Session, Depends(get_db)]
 ):
     verify_baby_access(payload.baby_id, user_id, db)
-    return sleep_crud.create_sleep_start(db, payload.baby_id, payload.start_time, user_id, payload.source or 'manual')
+    created = sleep_crud.create_sleep_start(db, payload.baby_id, payload.start_time, user_id, payload.source or 'manual', payload.position)
+    return SleepRecordResponse.model_validate(created, from_attributes=True)
 
 @router.post("/start/", response_model=SleepRecordResponse, status_code=status.HTTP_201_CREATED)
 def start_sleep_record_slash(
@@ -140,7 +146,8 @@ def start_sleep_record_slash(
     db: Annotated[Session, Depends(get_db)]
 ):
     verify_baby_access(payload.baby_id, user_id, db)
-    return sleep_crud.create_sleep_start(db, payload.baby_id, payload.start_time, user_id, payload.source or 'manual')
+    created = sleep_crud.create_sleep_start(db, payload.baby_id, payload.start_time, user_id, payload.source or 'manual', payload.position)
+    return SleepRecordResponse.model_validate(created, from_attributes=True)
 
 @router.patch("/{record_id}/stop", response_model=SleepRecordResponse)
 def stop_sleep_record(
@@ -156,7 +163,7 @@ def stop_sleep_record(
     updated_record = sleep_crud.stop_sleep_record(db, record_id, payload.end_time)
     if not updated_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return updated_record
+    return SleepRecordResponse.model_validate(updated_record, from_attributes=True)
 
 @router.patch("/{record_id}/stop/", response_model=SleepRecordResponse)
 def stop_sleep_record_slash(
@@ -172,7 +179,7 @@ def stop_sleep_record_slash(
     updated_record = sleep_crud.stop_sleep_record(db, record_id, payload.end_time)
     if not updated_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return updated_record
+    return SleepRecordResponse.model_validate(updated_record, from_attributes=True)
 
 @router.patch("/{record_id}/auto-close", response_model=SleepRecordResponse)
 def auto_close_sleep_record(
@@ -188,7 +195,7 @@ def auto_close_sleep_record(
     updated_record = sleep_crud.auto_close_sleep_record(db, record_id, payload.auto_closed_at)
     if not updated_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return updated_record
+    return SleepRecordResponse.model_validate(updated_record, from_attributes=True)
 
 @router.patch("/{record_id}/auto-close/", response_model=SleepRecordResponse)
 def auto_close_sleep_record_slash(
@@ -204,4 +211,4 @@ def auto_close_sleep_record_slash(
     updated_record = sleep_crud.auto_close_sleep_record(db, record_id, payload.auto_closed_at)
     if not updated_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="更新失败")
-    return updated_record
+    return SleepRecordResponse.model_validate(updated_record, from_attributes=True)

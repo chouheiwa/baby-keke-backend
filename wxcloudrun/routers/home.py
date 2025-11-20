@@ -11,6 +11,10 @@ from wxcloudrun.crud import feeding as feeding_crud
 from wxcloudrun.crud import diaper as diaper_crud
 from wxcloudrun.crud import sleep as sleep_crud
 from wxcloudrun.crud import growth as growth_crud
+from wxcloudrun.schemas.feeding import FeedingRecordResponse
+from wxcloudrun.schemas.diaper import DiaperRecordResponse
+from wxcloudrun.schemas.sleep import SleepRecordResponse
+from wxcloudrun.schemas.growth import GrowthRecordResponse
 
 router = APIRouter(
     prefix="/api/home",
@@ -55,8 +59,20 @@ def get_home_aggregated_records(
     )
 
     return {
-        "feeding": feeding_records,
-        "diaper": diaper_records,
-        "sleep": sleep_records,
-        "growth": growth_records,
+        "feeding": [
+            FeedingRecordResponse.model_validate(r, from_attributes=True)
+            for r in feeding_records
+        ],
+        "diaper": [
+            DiaperRecordResponse.model_validate(r, from_attributes=True)
+            for r in diaper_records
+        ],
+        "sleep": [
+            SleepRecordResponse.model_validate(r, from_attributes=True)
+            for r in sleep_records
+        ],
+        "growth": [
+            GrowthRecordResponse.model_validate(r, from_attributes=True)
+            for r in growth_records
+        ],
     }

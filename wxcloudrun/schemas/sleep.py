@@ -39,6 +39,7 @@ class SleepStartCreate(BaseModel):
     baby_id: int = Field(..., description="宝宝ID")
     start_time: datetime = Field(..., description="入睡时间")
     source: Optional[Literal['manual', 'auto']] = Field('manual', description="记录来源")
+    position: Optional[Literal['left', 'middle', 'right']] = Field(None, description="睡眠姿势(左/中/右)")
 
 class SleepStopUpdate(BaseModel):
     end_time: datetime = Field(..., description="醒来时间")
