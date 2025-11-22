@@ -23,6 +23,8 @@ class FeedingRecordBase(BaseModel):
     # 母乳喂养字段（支持两种模式）
     feeding_sequence: Optional[List[FeedingSequenceItem]] = Field(None, description="喂养序列(母乳交替记录) - 详细模式")
     breast_side: Optional[Literal['left', 'right', 'both', 'unknown']] = Field(None, description="哺乳侧 - 快速模式(用于快速补记)")
+    duration_left: Optional[int] = Field(None, ge=0, description="左侧时长(秒)")
+    duration_right: Optional[int] = Field(None, ge=0, description="右侧时长(秒)")
 
     # 奶粉/辅食字段
     amount: Optional[int] = Field(None, ge=0, description="奶量(ml)或食量(g)")
@@ -68,6 +70,8 @@ class FeedingRecordUpdate(BaseModel):
     feeding_type: Optional[Literal['breast', 'formula', 'solid']] = Field(None, description="喂养类型")
     feeding_sequence: Optional[List[FeedingSequenceItem]] = Field(None, description="喂养序列(母乳交替记录)")
     breast_side: Optional[Literal['left', 'right', 'both', 'unknown']] = Field(None, description="哺乳侧(快速模式)")
+    duration_left: Optional[int] = Field(None, ge=0, description="左侧时长(秒)")
+    duration_right: Optional[int] = Field(None, ge=0, description="右侧时长(秒)")
     amount: Optional[int] = Field(None, ge=0, description="奶量(ml)或食量(g)")
     bottle_content: Optional[Literal['breast', 'formula']] = Field(None, description="奶瓶内容（母乳/奶粉）")
     food_name: Optional[str] = Field(None, max_length=100, description="食物名称")

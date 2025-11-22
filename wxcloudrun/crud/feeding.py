@@ -171,9 +171,35 @@ def get_feeding_records_by_baby(
     return records
 
 
+def _calculate_durations(data: dict) -> dict:
+    """从 feeding_sequence 计算 duration_left 和 duration_right"""
+    if 'feeding_sequence' in data and data['feeding_sequence']:
+        sequence = data['feeding_sequence']
+        if isinstance(sequence, list):
+            left_duration = 0
+            right_duration = 0
+            for item in sequence:
+                # item 可能是 dict 或 object
+                side = getattr(item, 'side', None) or item.get('side')
+                duration = getattr(item, 'duration_seconds', 0) or item.get('duration_seconds', 0)
+                
+                if side == 'left':
+                    left_duration += duration
+                elif side == 'right':
+                    right_duration += duration
+            
+            # 如果没有手动指定时长，则使用计算值
+            if 'duration_left' not in data or data['duration_left'] is None:
+                data['duration_left'] = left_duration
+            if 'duration_right' not in data or data['duration_right'] is None:
+                data['duration_right'] = right_duration
+    return data
+
+
 def create_feeding_record(db: Session, record: FeedingRecordCreate, user_id: int) -> FeedingRecord:
     """创建喂养记录"""
     record_data = record.model_dump()
+    record_data = _calculate_durations(record_data)
     record_data = _serialize_feeding_sequence(record_data)
     db_record = FeedingRecord(**record_data, user_id=user_id)
     db.add(db_record)
@@ -192,6 +218,7 @@ def update_feeding_record(
         return None
 
     update_data = record.model_dump(exclude_unset=True)
+    update_data = _calculate_durations(update_data)
     update_data = _serialize_feeding_sequence(update_data)
 
     for field, value in update_data.items():
@@ -226,3 +253,61 @@ def get_latest_feeding(db: Session, baby_id: int) -> Optional[FeedingRecord]:
         _deserialize_feeding_sequence(record)
         _attach_creator_info(db, record)
     return record
+
+
+def get_daily_feeding_stats(db: Session, baby_id: int, date: datetime) -> dict:
+    """获取指定日期的喂养统计（左右侧总时长、最近一次喂养侧）"""
+    # 1. 获取当天的所有记录
+    start_of_day = date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = date.replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    records = (
+        db.query(FeedingRecord)
+        .filter(
+            FeedingRecord.baby_id == baby_id,
+            FeedingRecord.feeding_type == 'breast',
+            FeedingRecord.start_time >= start_of_day,
+            FeedingRecord.start_time <= end_of_day
+        )
+        .order_by(FeedingRecord.start_time.asc())
+        .all()
+    )
+    
+    total_left = 0
+    total_right = 0
+    
+    for r in records:
+        total_left += (r.duration_left or 0)
+        total_right += (r.duration_right or 0)
+        
+    # 2. 获取最近一次喂养记录（不限当天，只要是最近的）
+    last_record = get_latest_feeding(db, baby_id)
+    last_side = None
+    last_time = None
+    
+    if last_record:
+        # 尝试从 feeding_sequence 判断最后一次的具体侧
+        # 如果没有 sequence，则尝试用 duration 判断
+        # 简单起见，我们看 duration_left 和 duration_right
+        # 如果都有，说明是双侧，或者最后一次是某一侧？
+        # 这里我们简单逻辑：如果 sequence 存在，取最后一个 item 的 side
+        # 否则，如果 duration_right > 0 则 right，否则 left (假设)
+        
+        if last_record.feeding_sequence and isinstance(last_record.feeding_sequence, list) and len(last_record.feeding_sequence) > 0:
+             last_item = last_record.feeding_sequence[-1]
+             last_side = getattr(last_item, 'side', None) or last_item.get('side')
+        else:
+             # Fallback
+             if (last_record.duration_right or 0) > 0:
+                 last_side = 'right'
+             elif (last_record.duration_left or 0) > 0:
+                 last_side = 'left'
+                 
+        last_time = last_record.end_time or last_record.start_time
+
+    return {
+        "total_left": total_left,
+        "total_right": total_right,
+        "last_side": last_side,
+        "last_time": last_time
+    }

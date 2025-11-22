@@ -73,6 +73,7 @@ from wxcloudrun.routers import (
     users_router,
     babies_router,
     feeding_router,
+    feeding_ongoing_router,
     diaper_router,
     sleep_router,
     growth_router,
@@ -85,6 +86,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(babies_router)
 app.include_router(feeding_router)
+app.include_router(feeding_ongoing_router)
 app.include_router(diaper_router)
 app.include_router(sleep_router)
 app.include_router(growth_router)

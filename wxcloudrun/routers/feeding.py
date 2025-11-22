@@ -123,3 +123,19 @@ def get_latest_feeding(
     if not latest:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="暂无喂养记录")
     return FeedingRecordResponse.model_validate(latest, from_attributes=True)
+    return FeedingRecordResponse.model_validate(latest, from_attributes=True)
+
+
+@router.get("/stats/daily", response_model=dict)
+def get_daily_stats(
+    baby_id: int,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)],
+    date: Optional[datetime] = Query(None)
+):
+    """获取每日喂养统计"""
+    verify_baby_access(baby_id, user_id, db)
+    
+    query_date = date or datetime.now()
+    stats = feeding_crud.get_daily_feeding_stats(db, baby_id, query_date)
+    return stats

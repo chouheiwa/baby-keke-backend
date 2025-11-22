@@ -28,6 +28,8 @@ class FeedingRecord(Base):
         Enum('left', 'right', 'both', 'unknown', name='breast_side_enum'),
         comment='哺乳侧(用于快速记录模式)'
     )
+    duration_left = Column(Integer, comment='左侧时长(秒)')
+    duration_right = Column(Integer, comment='右侧时长(秒)')
 
     # 奶粉喂养字段
     amount = Column(Integer, comment='奶量(ml)或食量(g)')

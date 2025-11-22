@@ -12,11 +12,14 @@ from .invitations import router as invitations_router
 from .policies import router as policies_router
 from .home import router as home_router
 
+from .feeding_ongoing import router as feeding_ongoing_router
+
 __all__ = [
     "auth_router",
     "users_router",
     "babies_router",
     "feeding_router",
+    "feeding_ongoing_router",
     "diaper_router",
     "sleep_router",
     "growth_router",
