@@ -14,6 +14,10 @@ from .home import router as home_router
 
 from .feeding_ongoing import router as feeding_ongoing_router
 
+from .jaundice import router as jaundice_router
+
+from .user_preference import router as user_preference_router
+
 __all__ = [
     "auth_router",
     "users_router",
@@ -23,7 +27,9 @@ __all__ = [
     "diaper_router",
     "sleep_router",
     "growth_router",
+    "jaundice_router",
     "invitations_router",
     "policies_router",
     "home_router",
+    "user_preference_router",
 ]

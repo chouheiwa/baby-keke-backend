@@ -100,7 +100,7 @@ def delete_growth_record(
     return None
 
 
-@router.get("/baby/{baby_id}/latest", response_model=GrowthRecordResponse)
+@router.get("/baby/{baby_id}/latest", response_model=Optional[GrowthRecordResponse])
 def get_latest_growth(
     baby_id: int,
     user_id: Annotated[int, Depends(get_current_user_id)],
@@ -111,7 +111,7 @@ def get_latest_growth(
 
     latest = growth_crud.get_latest_growth(db, baby_id)
     if not latest:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="暂无生长发育记录")
+        return None
     return GrowthRecordResponse.model_validate(latest, from_attributes=True)
 
 
