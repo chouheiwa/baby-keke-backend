@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Any
 
 from wxcloudrun.core.database import get_db
-from wxcloudrun.core.auth import get_current_user
+from wxcloudrun.utils.deps import get_current_user
 from wxcloudrun.models.user import User
 from wxcloudrun.schemas.user_preference import (
     UserPreferenceCreate,

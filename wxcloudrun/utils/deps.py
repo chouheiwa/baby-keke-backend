@@ -43,6 +43,22 @@ def get_current_user_id(
     return user.id
 
 
+def get_current_user(
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    """
+    获取当前登录用户对象
+    """
+    user = user_crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="用户不存在"
+        )
+    return user
+
+
 def verify_baby_access(
     baby_id: int,
     user_id: Annotated[int, Depends(get_current_user_id)],
