@@ -19,7 +19,7 @@ def create_jaundice_record(
 ):
     """创建黄疸记录"""
     verify_baby_access(record.baby_id, user_id, db)
-    created = jaundice_crud.create_jaundice_record(db, record)
+    created = jaundice_crud.create_jaundice_record(db, record, user_id)
     return JaundiceRecordResponse.model_validate(created, from_attributes=True)
 
 @router.get("/baby/{baby_id}", response_model=List[JaundiceRecordResponse])

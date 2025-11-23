@@ -14,10 +14,13 @@ from wxcloudrun.schemas.user_preference import (
 )
 from wxcloudrun.crud import user_preference as crud_preference
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/api/users/me/preferences",
+    tags=["用户偏好设置"]
+)
 
 
-@router.get("/preferences", response_model=UserPreferencesResponse)
+@router.get("", response_model=UserPreferencesResponse)
 async def get_all_user_preferences(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -27,7 +30,7 @@ async def get_all_user_preferences(
     return UserPreferencesResponse(preferences=preferences_dict)
 
 
-@router.get("/preferences/{preference_key}")
+@router.get("/{preference_key}")
 async def get_user_preference(
     preference_key: str,
     current_user: User = Depends(get_current_user),
@@ -36,14 +39,11 @@ async def get_user_preference(
     """获取当前用户的特定偏好设置"""
     preference = crud_preference.get_preference(db, current_user.id, preference_key)
     if not preference:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Preference '{preference_key}' not found"
-        )
+        return None
     return preference.preference_value
 
 
-@router.put("/preferences/{preference_key}", response_model=UserPreferenceResponse)
+@router.put("/{preference_key}", response_model=UserPreferenceResponse)
 async def set_user_preference(
     preference_key: str,
     preference_update: UserPreferenceUpdate,
@@ -60,7 +60,7 @@ async def set_user_preference(
     return preference
 
 
-@router.delete("/preferences/{preference_key}")
+@router.delete("/{preference_key}")
 async def delete_user_preference(
     preference_key: str,
     current_user: User = Depends(get_current_user),

@@ -5,10 +5,11 @@ from datetime import datetime
 from wxcloudrun.models.jaundice import JaundiceRecord
 from wxcloudrun.schemas.jaundice import JaundiceRecordCreate, JaundiceRecordUpdate
 
-def create_jaundice_record(db: Session, record: JaundiceRecordCreate) -> JaundiceRecord:
+def create_jaundice_record(db: Session, record: JaundiceRecordCreate, user_id: int) -> JaundiceRecord:
     """创建黄疸记录"""
     db_record = JaundiceRecord(
         baby_id=record.baby_id,
+        user_id=user_id,
         record_date=record.record_date,
         value=record.value,
         photo_url=record.photo_url,
@@ -27,12 +28,19 @@ def get_jaundice_records_by_baby(
     db: Session, 
     baby_id: int, 
     skip: int = 0, 
-    limit: int = 100
+    limit: int = 100,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None
 ) -> List[JaundiceRecord]:
     """获取宝宝的黄疸记录列表"""
-    return db.query(JaundiceRecord)\
-        .filter(JaundiceRecord.baby_id == baby_id)\
-        .order_by(desc(JaundiceRecord.record_date))\
+    query = db.query(JaundiceRecord).filter(JaundiceRecord.baby_id == baby_id)
+    
+    if start_date:
+        query = query.filter(JaundiceRecord.record_date >= start_date)
+    if end_date:
+        query = query.filter(JaundiceRecord.record_date <= end_date)
+        
+    return query.order_by(desc(JaundiceRecord.record_date))\
         .offset(skip)\
         .limit(limit)\
         .all()

@@ -24,11 +24,14 @@ class JaundiceRecordUpdate(BaseModel):
     notes: Optional[str] = Field(None, description="备注")
 
 
+from wxcloudrun.schemas.user import UserResponse
+
 class JaundiceRecordResponse(JaundiceRecordBase):
     """黄疸记录响应数据"""
     id: int = Field(..., description="记录ID")
     baby_id: int = Field(..., description="宝宝ID")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
+    created_by: Optional[UserResponse] = Field(None, description="创建人")
 
     model_config = ConfigDict(from_attributes=True)
