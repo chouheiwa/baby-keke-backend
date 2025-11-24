@@ -17,6 +17,7 @@ from .feeding_ongoing import router as feeding_ongoing_router
 from .jaundice import router as jaundice_router
 
 from .user_preference import router as user_preference_router
+from .notifications import router as notifications_router
 
 __all__ = [
     "auth_router",
@@ -32,4 +33,5 @@ __all__ = [
     "policies_router",
     "home_router",
     "user_preference_router",
+    "notifications_router",
 ]

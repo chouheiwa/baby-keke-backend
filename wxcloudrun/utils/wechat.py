@@ -242,6 +242,45 @@ class WeChatAPI:
         self.logger.error(f"wechat.qrcode: error errcode={data.get('errcode')} errmsg={data.get('errmsg')}")
         raise WeChatAPIError(data.get("errcode", -1), data.get("errmsg", "获取小程序码失败"))
 
+    async def send_subscribe_message(self, openid: str, template_id: str, page: str, data: Dict, miniprogram_state: str = "formal") -> bool:
+        """
+        发送订阅消息
+        
+        Args:
+            openid: 接收者（用户）的 openid
+            template_id: 所需下发的订阅消息的id
+            page: 点击模板卡片后的跳转页面，仅限本小程序内的页面
+            data: 模板内容，格式形如 { "key1": { "value": any }, "key2": { "value": any } }
+            miniprogram_state: 跳转小程序类型：developer为开发版；trial为体验版；formal为正式版；默认为正式版
+            
+        Returns:
+            True: 发送成功
+            False: 发送失败
+        """
+        access_token = await self._get_access_token()
+        url = f"{self.BASE_URL}/cgi-bin/message/subscribe/send?access_token={access_token}"
+        
+        payload = {
+            "touser": openid,
+            "template_id": template_id,
+            "page": page,
+            "data": data,
+            "miniprogram_state": miniprogram_state,
+            "lang": "zh_CN"
+        }
+        
+        self.logger.info(f"wechat.subscribe_msg: request openid={openid} template_id={template_id}")
+        async with httpx.AsyncClient(verify=self.verify) as client:
+            resp = await client.post(url, json=payload)
+            result = resp.json()
+            
+        self.logger.info(f"wechat.subscribe_msg: response errcode={result.get('errcode')} errmsg={result.get('errmsg')}")
+        
+        if result.get("errcode") == 0:
+            return True
+        
+        self.logger.error(f"wechat.subscribe_msg: failed errcode={result.get('errcode')} errmsg={result.get('errmsg')}")
+        return False
 
 
 # 创建全局实例
