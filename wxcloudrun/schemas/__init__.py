@@ -18,6 +18,7 @@ from .diaper import DiaperRecordCreate, DiaperRecordUpdate, DiaperRecordResponse
 from .sleep import SleepRecordCreate, SleepRecordUpdate, SleepRecordResponse
 from .growth import GrowthRecordCreate, GrowthRecordUpdate, GrowthRecordResponse
 from .invitation import InviteCodeResponse, AcceptInvitationRequest
+from . import vaccine
 
 __all__ = [
     # User schemas
@@ -57,4 +58,5 @@ __all__ = [
     "GrowthRecordResponse",
     "InviteCodeResponse",
     "AcceptInvitationRequest",
+    "vaccine",
 ]

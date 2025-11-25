@@ -9,6 +9,7 @@ from . import diaper
 from . import sleep
 from . import growth
 from . import invitation
+from . import vaccine
 
 __all__ = [
     "user",
@@ -19,4 +20,5 @@ __all__ = [
     "sleep",
     "growth",
     "invitation",
+    "vaccine",
 ]

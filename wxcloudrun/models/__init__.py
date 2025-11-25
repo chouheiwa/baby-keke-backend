@@ -10,6 +10,7 @@ from .sleep import SleepRecord
 from .growth import GrowthRecord
 from .invitation import Invitation
 from .wechat_token import WeChatAccessToken
+from .vaccine import Vaccine, VaccinationRecord
 
 __all__ = [
     "User",
@@ -22,4 +23,6 @@ __all__ = [
     "GrowthRecord",
     "Invitation",
     "WeChatAccessToken",
+    "Vaccine",
+    "VaccinationRecord",
 ]

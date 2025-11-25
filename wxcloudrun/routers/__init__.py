@@ -18,6 +18,7 @@ from .jaundice import router as jaundice_router
 
 from .user_preference import router as user_preference_router
 from .notifications import router as notifications_router
+from .vaccines import router as vaccines_router
 
 __all__ = [
     "auth_router",
@@ -34,4 +35,5 @@ __all__ = [
     "home_router",
     "user_preference_router",
     "notifications_router",
+    "vaccines_router",
 ]

@@ -15,6 +15,34 @@ from wxcloudrun.schemas.session import (
 from wxcloudrun.crud import session as session_crud
 from wxcloudrun.utils.wechat import get_wechat_api, WeChatAPIError
 
+
+from fastapi import Header
+
+async def get_current_user_id(
+    x_wx_openid: Annotated[str | None, Header()] = None,
+    db: Session = Depends(get_db)
+) -> int:
+    """
+    获取当前用户ID (Dependency)
+    从请求头 X-WX-OPENID 获取 openid，查询数据库获取 user_id
+    """
+    if not x_wx_openid:
+        # 本地开发环境可能没有 X-WX-OPENID，尝试从测试 headers 获取或使用默认测试用户
+        # 这里的处理取决于具体的开发环境配置
+        # 暂时抛出未认证错误
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing X-WX-OPENID header"
+        )
+        
+    user = session_crud.get_user_by_openid(db, x_wx_openid)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    return user.id
+
 router = APIRouter(
     prefix="/api/auth",
     tags=["认证管理"]
