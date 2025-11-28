@@ -15,6 +15,11 @@ class Vaccine(Base):
     type = Column(String(20), nullable=False, comment='类型：FREE(免费)/PAID(自费)')
     target_age_month = Column(Integer, nullable=False, comment='接种月龄(0为出生)')
     description = Column(Text, comment='说明')
+    side_effects = Column(Text, comment='常见副作用')
+    precautions = Column(Text, comment='注意事项')
+    contraindications = Column(Text, comment='禁忌症')
+    interval_info = Column(Text, comment='接种间隔说明')
+    administration_route = Column(String(20), default='INJECTION', comment='接种途径：INJECTION(注射)/ORAL(口服)')
     is_active = Column(Boolean, default=True, comment='是否启用')
 
 class VaccinationRecord(Base):

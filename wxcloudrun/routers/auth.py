@@ -35,13 +35,13 @@ async def get_current_user_id(
             detail="Missing X-WX-OPENID header"
         )
         
-    user = session_crud.get_user_by_openid(db, x_wx_openid)
-    if not user:
+    session = session_crud.get_session_by_openid(db, x_wx_openid)
+    if not session:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
+            detail="Session not found"
         )
-    return user.id
+    return session.user_id
 
 router = APIRouter(
     prefix="/api/auth",

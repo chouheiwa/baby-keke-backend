@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from wxcloudrun.models.vaccine import Vaccine, VaccinationRecord
-from typing import List, Optional
+from wxcloudrun.models.vaccine_config import VaccineConfig
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 # === 疫苗基础信息 ===
@@ -26,7 +27,7 @@ def create_vaccine(db: Session, vaccine_data: dict) -> Vaccine:
     return db_vaccine
 
 def init_vaccines(db: Session, vaccines_data: List[dict]):
-    """初始化疫苗数据（如果不存在则创建）"""
+    """初始化疫苗数据（如果不存在则创建，存在则更新）"""
     for data in vaccines_data:
         existing = db.query(Vaccine).filter(
             Vaccine.code == data['code'],
@@ -35,6 +36,13 @@ def init_vaccines(db: Session, vaccines_data: List[dict]):
         
         if not existing:
             create_vaccine(db, data)
+        else:
+            # 更新现有数据
+            for key, value in data.items():
+                if hasattr(existing, key):
+                    setattr(existing, key, value)
+            db.add(existing)
+    db.commit()
 
 # === 接种记录 ===
 
@@ -92,3 +100,26 @@ def delete_record(db: Session, baby_id: int, vaccine_id: int):
     if record:
         db.delete(record)
         db.commit()
+
+# === 疫苗配置 ===
+
+def get_vaccine_config(db: Session, baby_id: int) -> Dict[str, Any]:
+    """获取宝宝疫苗配置"""
+    config_record = db.query(VaccineConfig).filter(VaccineConfig.baby_id == baby_id).first()
+    if config_record:
+        return config_record.config
+    return {}
+
+def update_vaccine_config(db: Session, baby_id: int, config: Dict[str, Any]) -> Dict[str, Any]:
+    """更新宝宝疫苗配置"""
+    config_record = db.query(VaccineConfig).filter(VaccineConfig.baby_id == baby_id).first()
+    
+    if config_record:
+        config_record.config = config
+    else:
+        config_record = VaccineConfig(baby_id=baby_id, config=config)
+        db.add(config_record)
+    
+    db.commit()
+    db.refresh(config_record)
+    return config_record.config
