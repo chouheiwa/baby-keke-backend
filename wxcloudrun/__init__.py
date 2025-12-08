@@ -83,7 +83,8 @@ from wxcloudrun.routers import (
     home_router,
     user_preference_router,
     notifications_router,
-    vaccines_router
+    vaccines_router,
+    album_router
 )
 
 app.include_router(auth_router)
@@ -101,3 +102,4 @@ app.include_router(home_router)
 app.include_router(user_preference_router)
 app.include_router(notifications_router)
 app.include_router(vaccines_router)
+app.include_router(album_router)

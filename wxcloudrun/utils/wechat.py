@@ -282,6 +282,37 @@ class WeChatAPI:
         self.logger.error(f"wechat.subscribe_msg: failed errcode={result.get('errcode')} errmsg={result.get('errmsg')}")
         return False
 
+    async def batch_download_file(self, file_list: list[dict]) -> list[dict]:
+        """
+        获取云存储文件的临时下载链接 (batchDownloadFile)
+        
+        Args:
+            file_list: 文件列表，格式 [{"fileid": "cloud://...", "max_age": 7200}]
+            
+        Returns:
+            文件列表，包含 temp_file_url
+        """
+        access_token = await self._get_access_token()
+        url = f"{self.BASE_URL}/tcb/batchdownloadfile?access_token={access_token}"
+        
+        payload = {
+            "env": get_settings().wx_env_id,
+            "file_list": file_list
+        }
+        
+        self.logger.info(f"wechat.batch_download_file: request count={len(file_list)}")
+        async with httpx.AsyncClient(verify=self.verify) as client:
+            resp = await client.post(url, json=payload)
+            result = resp.json()
+            
+        self.logger.info(f"wechat.batch_download_file: response errcode={result.get('errcode')}")
+        
+        if result.get("errcode") == 0:
+            return result.get("file_list", [])
+        
+        self.logger.error(f"wechat.batch_download_file: failed errcode={result.get('errcode')} errmsg={result.get('errmsg')}")
+        return []
+
 
 # 创建全局实例
 _WX_API_INSTANCE: Optional[WeChatAPI] = None

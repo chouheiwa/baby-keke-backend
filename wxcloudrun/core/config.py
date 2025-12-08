@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     # 微信小程序配置
     wx_appid: str = ""
     wx_appsecret: str = ""
+    wx_env_id: str = ""  # 云开发环境ID
     
     # JWT配置（未来用于认证）
     secret_key: str = "your-secret-key-change-in-production"
