@@ -82,6 +82,53 @@ def update_ongoing_action(
     db.refresh(ongoing)
     return FeedingOngoingResponse.model_validate(ongoing, from_attributes=True)
 
+@router.post("/resume/{record_id}", response_model=FeedingOngoingResponse)
+def resume_feeding_from_record(
+    record_id: int,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    """从已有记录恢复ongoing session（仅支持1小时内的记录）"""
+    # 获取原记录
+    original_record = db.query(FeedingRecord).filter(FeedingRecord.id == record_id).first()
+    if not original_record:
+        raise HTTPException(status_code=404, detail="记录不存在")
+
+    verify_baby_access(original_record.baby_id, user_id, db)
+
+    # 检查记录是否在1小时内
+    now = datetime.now()
+    time_diff = (now - original_record.start_time).total_seconds() / 60
+    if time_diff > 60:
+        raise HTTPException(status_code=400, detail="只能恢复1小时内的记录")
+
+    # 检查是否已有ongoing session
+    existing_ongoing = db.query(FeedingOngoing).filter(
+        FeedingOngoing.baby_id == original_record.baby_id
+    ).first()
+    if existing_ongoing:
+        raise HTTPException(status_code=400, detail="已有正在进行的喂养，请先完成")
+
+    # 创建新的ongoing session，使用原记录的时长作为初始累计值
+    ongoing = FeedingOngoing(
+        baby_id=original_record.baby_id,
+        start_time=original_record.start_time,  # 保持原开始时间
+        last_action_time=now,  # 当前时间作为最后操作时间
+        current_side='paused',  # 初始为暂停状态
+        accumulated_left=original_record.duration_left or 0,
+        accumulated_right=original_record.duration_right or 0
+    )
+
+    db.add(ongoing)
+
+    # 删除原记录
+    db.delete(original_record)
+
+    db.commit()
+    db.refresh(ongoing)
+
+    return FeedingOngoingResponse.model_validate(ongoing, from_attributes=True)
+
 @router.post("/finish/{baby_id}", response_model=FeedingRecordResponse)
 def finish_ongoing_feeding(
     baby_id: int,
