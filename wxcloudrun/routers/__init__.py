@@ -8,6 +8,7 @@ from .feeding import router as feeding_router
 from .diaper import router as diaper_router
 from .sleep import router as sleep_router
 from .growth import router as growth_router
+from .pumping import router as pumping_router
 from .invitations import router as invitations_router
 from .policies import router as policies_router
 from .home import router as home_router
@@ -30,6 +31,7 @@ __all__ = [
     "diaper_router",
     "sleep_router",
     "growth_router",
+    "pumping_router",
     "jaundice_router",
     "invitations_router",
     "policies_router",

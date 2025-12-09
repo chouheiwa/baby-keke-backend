@@ -74,6 +74,9 @@ class Baby(Base):
     growth_records = relationship(
         "GrowthRecord", back_populates="baby", cascade="all, delete-orphan"
     )
+    pumping_records = relationship(
+        "PumpingRecord", back_populates="baby", cascade="all, delete-orphan"
+    )
 
 
 class BabyFamily(Base):

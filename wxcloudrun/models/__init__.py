@@ -9,6 +9,7 @@ from .feeding import FeedingRecord
 from .diaper import DiaperRecord
 from .sleep import SleepRecord
 from .growth import GrowthRecord
+from .pumping import PumpingRecord
 from .invitation import Invitation
 from .wechat_token import WeChatAccessToken
 from .vaccine import Vaccine, VaccinationRecord
@@ -24,6 +25,7 @@ __all__ = [
     "DiaperRecord",
     "SleepRecord",
     "GrowthRecord",
+    "PumpingRecord",
     "JaundiceRecord",
     "Vaccine",
     "VaccinationRecord",

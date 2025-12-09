@@ -41,6 +41,9 @@ SOURCE tables/07_growth_records.sql;
 -- 8. 家庭邀请表（依赖 babies 和 users 表）
 SOURCE tables/08_invitations.sql;
 
+-- 11. 吸奶记录表（依赖 babies 和 users 表）
+SOURCE tables/11_pumping_records.sql;
+
 -- 9. 用户会话表（依赖 users 表）
 SOURCE tables/09_user_sessions.sql;
 
