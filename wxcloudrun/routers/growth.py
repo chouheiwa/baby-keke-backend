@@ -124,3 +124,18 @@ def get_growth_curve(
     """获取生长曲线数据"""
     verify_baby_access(baby_id, user_id, db)
     return growth_crud.get_growth_curve_data(db, baby_id)
+
+
+@router.get("/baby/{baby_id}/daily-aggregated", response_model=list[dict])
+def get_daily_aggregated_growth(
+    baby_id: int,
+    user_id: Annotated[int, Depends(get_current_user_id)],
+    db: Annotated[Session, Depends(get_db)]
+):
+    """获取每日聚合的生长数据（每天只取一条最新记录）
+
+    用于图表展示，对于同一天的多条记录，只保留最新的一条。
+    返回按日期升序排列的数据。
+    """
+    verify_baby_access(baby_id, user_id, db)
+    return growth_crud.get_daily_aggregated_growth_data(db, baby_id)

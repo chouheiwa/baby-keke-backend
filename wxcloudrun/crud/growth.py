@@ -184,3 +184,48 @@ def get_growth_curve_data(db: Session, baby_id: int) -> list[dict]:
         }
         for record in records
     ]
+
+
+def get_daily_aggregated_growth_data(db: Session, baby_id: int) -> list[dict]:
+    """获取每日聚合的生长数据（每天只取一条最新记录）
+
+    对于同一天的多条记录，只保留最新的一条（按ID降序）
+    返回按日期升序排列的数据，用于图表展示
+    """
+    from sqlalchemy import func
+
+    # 子查询：找出每天的最大ID（即最新记录）
+    subquery = (
+        db.query(
+            func.date(GrowthRecord.record_date).label('record_day'),
+            func.max(GrowthRecord.id).label('max_id')
+        )
+        .filter(GrowthRecord.baby_id == baby_id)
+        .group_by(func.date(GrowthRecord.record_date))
+        .subquery()
+    )
+
+    # 主查询：根据每天的最大ID获取完整记录
+    records = (
+        db.query(GrowthRecord)
+        .join(
+            subquery,
+            and_(
+                GrowthRecord.id == subquery.c.max_id,
+                func.date(GrowthRecord.record_date) == subquery.c.record_day
+            )
+        )
+        .filter(GrowthRecord.baby_id == baby_id)
+        .order_by(GrowthRecord.record_date.asc())
+        .all()
+    )
+
+    return [
+        {
+            'date': record.record_date,
+            'weight': float(record.weight) if record.weight else None,
+            'height': float(record.height) if record.height else None,
+            'head_circumference': float(record.head_circumference) if record.head_circumference else None,
+        }
+        for record in records
+    ]
