@@ -12,11 +12,13 @@ from wxcloudrun.crud import diaper as diaper_crud
 from wxcloudrun.crud import sleep as sleep_crud
 from wxcloudrun.crud import growth as growth_crud
 from wxcloudrun.crud import jaundice as jaundice_crud
+from wxcloudrun.crud import pumping as pumping_crud
 from wxcloudrun.schemas.feeding import FeedingRecordResponse
 from wxcloudrun.schemas.diaper import DiaperRecordResponse
 from wxcloudrun.schemas.sleep import SleepRecordResponse
 from wxcloudrun.schemas.growth import GrowthRecordResponse
 from wxcloudrun.schemas.jaundice import JaundiceRecordResponse
+from wxcloudrun.schemas.pumping import PumpingRecordResponse
 
 router = APIRouter(
     prefix="/api/home",
@@ -64,6 +66,10 @@ def get_home_aggregated_records(
         db, baby_id, skip, limit, start_date, end_date
     )
 
+    pumping_records = pumping_crud.get_pumping_records_by_baby(
+        db, baby_id, skip, limit, start_date, end_date
+    )
+
     return {
         "feeding": [
             FeedingRecordResponse.model_validate(r, from_attributes=True)
@@ -84,5 +90,9 @@ def get_home_aggregated_records(
         "jaundice": [
             JaundiceRecordResponse.model_validate(r, from_attributes=True)
             for r in jaundice_records
+        ],
+        "pumping": [
+            PumpingRecordResponse.model_validate(r, from_attributes=True)
+            for r in pumping_records
         ],
     }
