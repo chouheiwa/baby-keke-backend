@@ -28,6 +28,7 @@ class FeedingRecordBase(BaseModel):
 
     # 奶粉/辅食字段
     amount: Optional[int] = Field(None, ge=0, description="奶量(ml)或食量(g)")
+    amount_unit: Optional[str] = Field(None, max_length=20, description="食量单位(如: g, ml, 滴, 勺, 碗等)")
     bottle_content: Optional[Literal['breast', 'formula']] = Field(None, description="奶瓶内容（breast母乳/formula奶粉）")
 
     # 辅食字段
@@ -73,6 +74,7 @@ class FeedingRecordUpdate(BaseModel):
     duration_left: Optional[int] = Field(None, ge=0, description="左侧时长(秒)")
     duration_right: Optional[int] = Field(None, ge=0, description="右侧时长(秒)")
     amount: Optional[int] = Field(None, ge=0, description="奶量(ml)或食量(g)")
+    amount_unit: Optional[str] = Field(None, max_length=20, description="食量单位(如: g, ml, 滴, 勺, 碗等)")
     bottle_content: Optional[Literal['breast', 'formula']] = Field(None, description="奶瓶内容（母乳/奶粉）")
     food_name: Optional[str] = Field(None, max_length=100, description="食物名称")
     start_time: Optional[datetime] = Field(None, description="开始时间")

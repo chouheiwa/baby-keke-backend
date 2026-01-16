@@ -1,6 +1,5 @@
 """用户偏好设置模型"""
-from sqlalchemy import Column, BigInteger, String, TIMESTAMP, ForeignKey, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Column, BigInteger, String, TIMESTAMP, ForeignKey, UniqueConstraint, JSON
 from sqlalchemy.sql import func
 from wxcloudrun.core.database import Base
 
@@ -23,7 +22,7 @@ class UserPreference(Base):
         comment="偏好设置键"
     )
     preference_value = Column(
-        JSONB,
+        JSON,
         nullable=False,
         comment="偏好设置值"
     )

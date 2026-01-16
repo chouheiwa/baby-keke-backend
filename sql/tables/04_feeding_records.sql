@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS `feeding_records` (
   -- 奶粉/辅食字段
   `bottle_content` ENUM('breast','formula') DEFAULT NULL COMMENT '奶瓶内容(母乳/奶粉)',
   `amount` INT(11) DEFAULT NULL COMMENT '奶量(ml)或食量(g)',
+  `amount_unit` VARCHAR(20) DEFAULT NULL COMMENT '食量单位(如: g, ml, 滴, 勺, 碗等)',
   `food_name` VARCHAR(100) DEFAULT NULL COMMENT '食物名称',
   `start_time` TIMESTAMP NOT NULL COMMENT '开始时间',
   `end_time` TIMESTAMP NULL DEFAULT NULL COMMENT '结束时间',
