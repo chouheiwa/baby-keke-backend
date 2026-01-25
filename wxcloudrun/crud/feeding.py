@@ -5,6 +5,7 @@ from typing import Optional
 from datetime import datetime
 import json
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from wxcloudrun.models.feeding import FeedingRecord
 from wxcloudrun.models.user import User
 from wxcloudrun.models.baby import BabyFamily
@@ -220,6 +221,10 @@ def update_feeding_record(
     update_data = record.model_dump(exclude_unset=True)
     update_data = _calculate_durations(update_data)
     update_data = _serialize_feeding_sequence(update_data)
+    if 'start_time' not in update_data:
+        update_data['start_time'] = db_record.start_time
+        # 强制写回 start_time，避免数据库自动更新时间覆盖
+        flag_modified(db_record, 'start_time')
 
     for field, value in update_data.items():
         setattr(db_record, field, value)
